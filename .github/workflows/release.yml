@@ -89,6 +89,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
             path: ./
+            merge-multiple: true
     
       - name: just print the tree for debug purposes
         run: find . -type f
