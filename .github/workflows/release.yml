@@ -87,6 +87,8 @@ jobs:
     steps:
       - name: Download artifacts
         uses: actions/download-artifact@v5
+        with:
+            path: ./
     
       - name: just print the tree for debug purposes
         run: find . -type f
