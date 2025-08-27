@@ -77,15 +77,15 @@ func getChapter(name string) string {
 	return ""
 }
 
-// compareChapters does a "natural" comparison based on chapter numbers.
+// compareChaptersLess does a "natural" comparison based on chapter numbers.
 // It splits chapter strings into number slices, then compares piece by piece.
-func compareChapters(name1 string, name2 string) bool {
+func compareChaptersLess(name1 string, name2 string) bool {
 	ch1 := getChapter(name1)
 	ch2 := getChapter(name2)
 
 	if ch1 == "" && ch2 == "" {
 		// fallback: plain string comparison if no chapters found
-		return name1 < name2
+		return name1 <= name2
 	}
 	if ch1 == "" {
 		return false // put ones without chapter at the end
@@ -179,7 +179,7 @@ func main() {
 
 	// Sort files using the helper functions
 	sort.Slice(cbzFiles, func(i, j int) bool {
-		return compareChapters(cbzFiles[i], cbzFiles[j])
+		return compareChaptersLess(cbzFiles[i], cbzFiles[j])
 	})
 
 	// Print the order of the files

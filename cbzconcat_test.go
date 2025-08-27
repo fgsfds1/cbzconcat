@@ -67,3 +67,148 @@ func TestPrintIfVerbose(t *testing.T) {
 		t.Errorf("Expected: \"%s\", Got: \"%s\"", expectedOutput, output)
 	}
 }
+
+func TestGetChapter(t *testing.T) {
+	title, expectedChapter, resultChapter := "", "", ""
+
+	title, expectedChapter = "", ""
+	resultChapter = getChapter(title)
+	if resultChapter != expectedChapter {
+		t.Errorf("Expected to get chapter \"%s\" from \"%s\", got \"%s\"", expectedChapter, title, resultChapter)
+	}
+	title, expectedChapter = "Ch.0001", "0001"
+	resultChapter = getChapter(title)
+	if resultChapter != expectedChapter {
+		t.Errorf("Expected to get chapter \"%s\" from \"%s\", got \"%s\"", expectedChapter, title, resultChapter)
+	}
+	title, expectedChapter = "Ch.0001.5", "0001.5"
+	resultChapter = getChapter(title)
+	if resultChapter != expectedChapter {
+		t.Errorf("Expected to get chapter \"%s\" from \"%s\", got \"%s\"", expectedChapter, title, resultChapter)
+	}
+	title, expectedChapter = "Ch 0001.5", "0001.5"
+	resultChapter = getChapter(title)
+	if resultChapter != expectedChapter {
+		t.Errorf("Expected to get chapter \"%s\" from \"%s\", got \"%s\"", expectedChapter, title, resultChapter)
+	}
+	title, expectedChapter = "Ch  0001.5", "0001.5"
+	resultChapter = getChapter(title)
+	if resultChapter != expectedChapter {
+		t.Errorf("Expected to get chapter \"%s\" from \"%s\", got \"%s\"", expectedChapter, title, resultChapter)
+	}
+	title, expectedChapter = "Ch 0001.5.5.5", "0001.5.5.5"
+	resultChapter = getChapter(title)
+	if resultChapter != expectedChapter {
+		t.Errorf("Expected to get chapter \"%s\" from \"%s\", got \"%s\"", expectedChapter, title, resultChapter)
+	}
+	title, expectedChapter = "ch 0001.5.5.5", "0001.5.5.5"
+	resultChapter = getChapter(title)
+	if resultChapter != expectedChapter {
+		t.Errorf("Expected to get chapter \"%s\" from \"%s\", got \"%s\"", expectedChapter, title, resultChapter)
+	}
+	title, expectedChapter = "ch. 0001.5.5.5", "0001.5.5.5"
+	resultChapter = getChapter(title)
+	if resultChapter != expectedChapter {
+		t.Errorf("Expected to get chapter \"%s\" from \"%s\", got \"%s\"", expectedChapter, title, resultChapter)
+	}
+	title, expectedChapter = "chapter 0001.5.5.5", "0001.5.5.5"
+	resultChapter = getChapter(title)
+	if resultChapter != expectedChapter {
+		t.Errorf("Expected to get chapter \"%s\" from \"%s\", got \"%s\"", expectedChapter, title, resultChapter)
+	}
+	title, expectedChapter = "chapter0001.5.5.5", "0001.5.5.5"
+	resultChapter = getChapter(title)
+	if resultChapter != expectedChapter {
+		t.Errorf("Expected to get chapter \"%s\" from \"%s\", got \"%s\"", expectedChapter, title, resultChapter)
+	}
+	title, expectedChapter = "chapter #0001.5.5.5", "0001.5.5.5"
+	resultChapter = getChapter(title)
+	if resultChapter != expectedChapter {
+		t.Errorf("Expected to get chapter \"%s\" from \"%s\", got \"%s\"", expectedChapter, title, resultChapter)
+	}
+	title, expectedChapter = "chapter №0001.5.5.5", "0001.5.5.5"
+	resultChapter = getChapter(title)
+	if resultChapter != expectedChapter {
+		t.Errorf("Expected to get chapter \"%s\" from \"%s\", got \"%s\"", expectedChapter, title, resultChapter)
+	}
+	title, expectedChapter = "chapter№0001.5.5.5", "0001.5.5.5"
+	resultChapter = getChapter(title)
+	if resultChapter != expectedChapter {
+		t.Errorf("Expected to get chapter \"%s\" from \"%s\", got \"%s\"", expectedChapter, title, resultChapter)
+	}
+	title, expectedChapter = "chapter#0001.5.5.5", "0001.5.5.5"
+	resultChapter = getChapter(title)
+	if resultChapter != expectedChapter {
+		t.Errorf("Expected to get chapter \"%s\" from \"%s\", got \"%s\"", expectedChapter, title, resultChapter)
+	}
+	title, expectedChapter = "ch #0001.5.5.5", "0001.5.5.5"
+	resultChapter = getChapter(title)
+	if resultChapter != expectedChapter {
+		t.Errorf("Expected to get chapter \"%s\" from \"%s\", got \"%s\"", expectedChapter, title, resultChapter)
+	}
+}
+
+func TestCompareChapters(t *testing.T) {
+	chapter1, chapter2 := "", ""
+
+	chapter1, chapter2 = "", ""
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "1", "2"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "2", "2.5"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "2.4", "2.5"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "2.4.5", "2.5"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "2.4.5", "2.4.6"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "0000000014", "015"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "0000000014", "015.5.5.5.5.5.5.5.5.5.5"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("\"%s\" should be a previous chapter to \"%s\", and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "My Code Can't Be That Bad! Ch. 123456", "My Code Can't Be That Bad! Ch. 123457"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "My Code Can't Be That Bad! Ch. 123456.5", "My Code Can't Be That Bad! Ch. 123457"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "My Code Can't Be That Bad! Ch. 123456.5 [superScans]", "My Code Can't Be That Bad! Ch. 123457 [superScans]"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "My Code Can't Be That Bad! Ch 123456.5 [superScans]", "My Code Can't Be That Bad! Ch. 123457 [superScans]"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "My Code Can't Be That Bad! chapter 123456.5 [superScans]", "My Code Can't Be That Bad! Ch. 123457 [superScans]"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "My Code Can't Be That Bad! ch  123456.5 [superScans]", "My Code Can't Be That Bad! Ch. 123457 [superScans]"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "My Code Can't Be That Bad! ch.123456.5 [superScans]", "My Code Can't Be That Bad! Ch. 123457 [superScans]"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+}
