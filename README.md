@@ -1,6 +1,11 @@
-# CBZ Concatenator
+# cbzconcat
 
-CBZ Concatenator is a Go-based command-line tool to merge multiple `.cbz` files into a single archive. It preserves image order, tries to use naturalsort to determine chapter order, extracts metadata from ComicInfo.xml if available, and generates a sanitized output filename. The tool is especially useful for manga or comic series split across multiple CBZ files.
+cbzconcat is a Go-based command-line tool to merge multiple `.cbz` files into a single archive.
+
+It preserves image order, tries to use naturalsort to determine chapter order, extracts metadata from ComicInfo.xml if available, and generates a sanitized output filename.
+
+The tool should be especially useful for manga or comic series split across multiple CBZ files.
+
 Tested only on MangaDex archives (for now).
 
 ---
@@ -80,7 +85,7 @@ The tool replaces spaces and dots with underscores, removes filesystem-invalid c
 Example:
 
 "Vol.01 Ch.0001 - あなたはどうですか?.cbz"
-→ "Vol_01_Ch_0001_-anataha_doudesuka.cbz"
+→ "Vol_01_Ch_0001_-_anataha_doudesuka.cbz"
 
 
 ---
