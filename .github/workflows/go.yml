@@ -5,9 +5,9 @@ name: Go
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "develop" ]
 
 jobs:
 
@@ -52,30 +52,3 @@ jobs:
       with:
         name: cbzconcat.linux.amd64
         path: ./build/cbzconcat.linux.amd64
-
-    - name: Build Linux x86
-      run: go build -v -o build/cbzconcat.linux.x86 ./...
-
-    - name: Upload artifact Linux x86
-      uses: actions/upload-artifact@v4
-      with:
-        name: cbzconcat.linux.x86
-        path: ./build/cbzconcat.linux.x86
-
-    - name: Build Windows amd64
-      run: GOOS=windows GOARCH=amd64 go build -v -o build/cbzconcat_win_amd64.exe
-
-    - name: Upload artifact Windows amd64
-      uses: actions/upload-artifact@v4
-      with:
-        name: cbzconcat_win_amd64.exe
-        path: ./build/cbzconcat_win_amd64.exe
-
-    - name: Build Windows x86
-      run: GOOS=windows GOARCH=386 go build -v -o build/cbzconcat_win_x86.exe
-
-    - name: Upload artifact Windows x86
-      uses: actions/upload-artifact@v4
-      with:
-        name: cbzconcat_win_x86.exe
-        path: ./build/cbzconcat_win_x86.exe
