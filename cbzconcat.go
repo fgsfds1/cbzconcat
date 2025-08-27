@@ -68,7 +68,7 @@ func readXmlFromZip(filepath string) (ComicInfo, error) {
 func getChapter(name string) string {
 	// Regex: match "Ch" + optional separator + digits + optional (.digits)* pattern
 	// Example matches: Ch0015, Ch-0015.5, Ch_0015.5.5
-	regex := regexp.MustCompile(`(?i)Ch[^0-9]{0,2}(\d+(?:\.\d+)*)`)
+	regex := regexp.MustCompile(`(?i)ch(?:|ap|apter)[^0-9]{0,2}(\d+(?:\.\d+)*)`)
 
 	matches := regex.FindStringSubmatch(name)
 	if len(matches) > 1 {

@@ -7,6 +7,8 @@ import (
 	"testing"
 )
 
+// Helper functions to capture stdout, used in tests that test over stdout
+// (printIfVerbose, printIfNotSilent)
 func setupStdout(t *testing.T) (*os.File, *os.File, *os.File) {
 	originalStdout := os.Stdout
 	r, w, err := os.Pipe()
@@ -18,7 +20,7 @@ func setupStdout(t *testing.T) (*os.File, *os.File, *os.File) {
 	return originalStdout, r, w
 }
 
-func unsetStdout(originalStdout *os.File, w *os.File, r *os.File) string {
+func getStdoutAndClose(originalStdout *os.File, w *os.File, r *os.File) string {
 	var buf bytes.Buffer
 
 	w.Close()
@@ -44,7 +46,7 @@ func TestPrintIfNotSilent(t *testing.T) {
 	printIfNotSilent("3_should_print", silentFlag, verboseFlag)
 	*silentFlag = false
 	printIfNotSilent("4_should_print", silentFlag, verboseFlag)
-	output := unsetStdout(originalStdout, w, r)
+	output := getStdoutAndClose(originalStdout, w, r)
 
 	expectedOutput := "1_should_print\n3_should_print\n4_should_print\n"
 	if output != expectedOutput {
@@ -60,7 +62,7 @@ func TestPrintIfVerbose(t *testing.T) {
 	printIfVerbose("1_shouldnt_print", verboseFlag)
 	*verboseFlag = true
 	printIfVerbose("2_should_print", verboseFlag)
-	output := unsetStdout(originalStdout, w, r)
+	output := getStdoutAndClose(originalStdout, w, r)
 
 	expectedOutput := "2_should_print\n"
 	if output != expectedOutput {
