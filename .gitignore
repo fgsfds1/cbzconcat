@@ -1,4 +1,8 @@
 # test manga
 *.cbz
+
 # binary
 cbzconcat
+
+# coverage stuff
+cover.*

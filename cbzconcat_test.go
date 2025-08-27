@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"os"
 	"testing"
@@ -30,56 +29,41 @@ func unsetStdout(originalStdout *os.File, w *os.File, r *os.File) string {
 	return output
 }
 
-func TestNoSilentFlagPrint(t *testing.T) {
+func TestPrintIfNotSilent(t *testing.T) {
 
 	originalStdout, r, w := setupStdout(t)
 
-	testString := "test123"
 	silentFlag := new(bool)
 	*silentFlag = false
 	verboseFlag := new(bool)
 	*verboseFlag = false
-	printIfNotSilent(testString, silentFlag, verboseFlag)
-
+	printIfNotSilent("1_should_print", silentFlag, verboseFlag)
+	*silentFlag = true
+	printIfNotSilent("2_shouldnt_print", silentFlag, verboseFlag)
+	*verboseFlag = true
+	printIfNotSilent("3_should_print", silentFlag, verboseFlag)
+	*silentFlag = false
+	printIfNotSilent("4_should_print", silentFlag, verboseFlag)
 	output := unsetStdout(originalStdout, w, r)
 
-	if output != fmt.Sprintf("%s\n", testString) {
-		t.Errorf("Expected: \"%s\", Got: \"%s\"", testString, output)
+	expectedOutput := "1_should_print\n3_should_print\n4_should_print\n"
+	if output != expectedOutput {
+		t.Errorf("Expected: \"%s\", Got: \"%s\"", expectedOutput, output)
 	}
 }
 
-func TestSilentFlagNoPrint(t *testing.T) {
-
+func TestPrintIfVerbose(t *testing.T) {
 	originalStdout, r, w := setupStdout(t)
 
-	testString := "test123"
-	silentFlag := new(bool)
-	*silentFlag = true
 	verboseFlag := new(bool)
 	*verboseFlag = false
-	printIfNotSilent(testString, silentFlag, verboseFlag)
-
-	output := unsetStdout(originalStdout, w, r)
-
-	if output != "" {
-		t.Errorf("Expected: \"%s\", Got: \"%s\"", testString, output)
-	}
-}
-
-func TestSilentFlagVerboseFlagPrint(t *testing.T) {
-
-	originalStdout, r, w := setupStdout(t)
-
-	testString := "test123"
-	silentFlag := new(bool)
-	*silentFlag = true
-	verboseFlag := new(bool)
+	printIfVerbose("1_shouldnt_print", verboseFlag)
 	*verboseFlag = true
-	printIfNotSilent(testString, silentFlag, verboseFlag)
-
+	printIfVerbose("2_should_print", verboseFlag)
 	output := unsetStdout(originalStdout, w, r)
 
-	if output != fmt.Sprintf("%s\n", testString) {
-		t.Errorf("Expected: \"%s\", Got: \"%s\"", testString, output)
+	expectedOutput := "2_should_print\n"
+	if output != expectedOutput {
+		t.Errorf("Expected: \"%s\", Got: \"%s\"", expectedOutput, output)
 	}
 }
