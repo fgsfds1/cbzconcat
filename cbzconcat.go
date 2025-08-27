@@ -22,8 +22,15 @@ type ComicInfo struct {
 	PageCount int      `xml:"PageCount"`
 }
 
-func printIfNotSilent(msg string, silentFlag *bool) {
-	if !*silentFlag {
+// Print if silent flag is not set, or if the verbose flag is set (overrides silent flag)
+func printIfNotSilent(msg string, silentFlag *bool, verboseFlag *bool) {
+	if !*silentFlag || *verboseFlag {
+		fmt.Println(msg)
+	}
+}
+
+func printIfVerbose(msg string, verboseFlag *bool) {
+	if *verboseFlag {
 		fmt.Println(msg)
 	}
 }
@@ -138,6 +145,7 @@ func main() {
 	showXML := flag.Bool("x", false, "Print resulting XML (in the resulting cbz archive)")
 	printOrder := flag.Bool("r", false, "Print the order of the input cbz files")
 	runSilent := flag.Bool("s", false, "Whether to produce any stdout output at all; errors will still be output; overrides other output flags")
+	runVerbose := flag.Bool("v", false, "Verbose output, overrides -s (silent) flag")
 	flag.Parse()
 
 	// We should have only two args left - the input dir and the output name
@@ -164,10 +172,10 @@ func main() {
 	}
 
 	// Print the original order of the files, for debugging
-	if *printOrder {
-		printIfNotSilent("Original order:", runSilent)
+	if *printOrder || *runVerbose {
+		printIfVerbose("Original order:", runVerbose)
 		for _, name := range cbzFiles {
-			printIfNotSilent(name, runSilent)
+			printIfVerbose(name, runVerbose)
 		}
 	}
 
@@ -177,10 +185,10 @@ func main() {
 	})
 
 	// Print the order of the files
-	if *printOrder {
-		printIfNotSilent("The files will be concatenated in the following order:", runSilent)
+	if *printOrder || *runVerbose {
+		printIfNotSilent("The files will be concatenated in the following order:", runSilent, runVerbose)
 		for _, name := range cbzFiles {
-			printIfNotSilent(name, runSilent)
+			printIfNotSilent(name, runSilent, runVerbose)
 		}
 	}
 
@@ -193,7 +201,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(string(firstXMLBytes[:]))
+	if *runVerbose {
+		fmt.Println("XML read from first chapter:")
+		fmt.Println(string(firstXMLBytes[:]))
+	}
 
 	lastComicInfo, err := readXmlFromZip(cbzFiles[len(cbzFiles)-1])
 	if err != nil {
@@ -203,12 +214,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(string(lastXMLBytes[:]))
+	if *runVerbose {
+		fmt.Println("XML read from last chapter:")
+		fmt.Println(string(lastXMLBytes[:]))
+	}
 
 	seriesName := firstComicInfo.Series
-	firstChapter := firstComicInfo.Title
-	lastChapter := lastComicInfo.Title
-	title := fmt.Sprintf("%s %s - %s", seriesName, firstChapter, lastChapter)
+	firstChapter := getChapter(firstComicInfo.Title)
+	lastChapter := getChapter(lastComicInfo.Title)
+	title := fmt.Sprintf("%s Ch.%s-%s", seriesName, firstChapter, lastChapter)
 	getChapter(firstChapter)
 	getChapter(lastChapter)
 
@@ -247,19 +261,19 @@ func main() {
 	// Add ComicInfo.xml
 	info := ComicInfo{
 		Title:     title,
-		Series:    filepath.Base(inputDir),
+		Series:    seriesName,
 		PageCount: pageIndex - 1,
 	}
 	xmlBytes, _ := xml.MarshalIndent(info, "", "  ")
 
-	if *showXML {
-		printIfNotSilent(fmt.Sprintf("Resulting XML written to %s:", outputFile), runSilent)
-		printIfNotSilent(string(xmlBytes[:]), runSilent)
+	if *showXML || *runVerbose {
+		printIfNotSilent(fmt.Sprintf("Resulting XML written to %s:", outputFile), runSilent, runVerbose)
+		printIfNotSilent(string(xmlBytes[:]), runSilent, runVerbose)
 	}
 
 	w, _ := outZipFile.Create("ComicInfo.xml")
 	w.Write([]byte(xml.Header))
 	w.Write(xmlBytes)
 
-	printIfNotSilent(fmt.Sprintf("Merged %d files into %s with %d pages\n", len(cbzFiles), outputFile, pageIndex-1), runSilent)
+	printIfNotSilent(fmt.Sprintf("Merged %d files into %s with %d pages\n", len(cbzFiles), outputFile, pageIndex-1), runSilent, runVerbose)
 }
