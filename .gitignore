@@ -1,0 +1,4 @@
+# test manga
+*.cbz
+# binary
+cbzconcat
