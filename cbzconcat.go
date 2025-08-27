@@ -12,6 +12,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/mozillazg/go-unidecode"
 )
 
 // ComicInfo structure for metadata
@@ -53,13 +55,12 @@ func readXmlFromZip(filepath string) (ComicInfo, error) {
 				return *result, err
 			}
 			rc.Close()
-			break
+			return *result, nil
 		}
-		return *result, fmt.Errorf("No XMLs found in %s", filepath)
 	}
 	r.Close()
 
-	return *result, nil
+	return *result, fmt.Errorf("no XMLs found in %s", filepath)
 }
 
 // getChapter extracts the chapter string like "0015", "0015.5", "0015.5.5" from a filename.
@@ -67,7 +68,7 @@ func readXmlFromZip(filepath string) (ComicInfo, error) {
 func getChapter(name string) string {
 	// Regex: match "Ch" + optional separator + digits + optional (.digits)* pattern
 	// Example matches: Ch0015, Ch-0015.5, Ch_0015.5.5
-	regex := regexp.MustCompile(`(?i)Ch[^0-9]*(\d+(?:\.\d+)*)`)
+	regex := regexp.MustCompile(`(?i)Ch[^0-9]{0,2}(\d+(?:\.\d+)*)`)
 
 	matches := regex.FindStringSubmatch(name)
 	if len(matches) > 1 {
@@ -110,35 +111,27 @@ func compareChapters(name1 string, name2 string) bool {
 	return len(parts1) < len(parts2)
 }
 
-/*
-// A function to compare two strings with chapter numbers inside them
-// This function should call the getChapter function to extract the chapter numbers
-// Something close to natural sort comparison
-// Don't change based on leading zeroes (000015 < 016)
-// Chapters can include dots (0015 < 0015.5 < 0016)
-// Possibly even multiple dots (0015 < 0015.5 < 0015.5.5 < 0016)
-// Returns true on name1 < name2
-func compareChapters(name1 string, name2 string) bool {
-	return true
+func sanitizeFilename(name string) string {
+	// Replace spaces and dots with underscores
+	name = strings.ReplaceAll(name, " ", "_")
+	name = strings.ReplaceAll(name, ".", "_")
+
+	// Remove illegal characters (Windows reserved: <>:"/\|?*)
+	illegal := regexp.MustCompile(`[<>:"/\\|?*]+`)
+	name = illegal.ReplaceAllString(name, "_")
+
+	// Trim leading/trailing underscores and dots
+	name = strings.Trim(name, "._ ")
+
+	if name == "" {
+		return "untitled"
+	}
+	return name
 }
 
-func getChapter(name string) string {
-	result := ""
-	fmt.Println(name)
-	// For now, only extract Ch<any symbol possibly><four digits><dot and more digits, possibly multiple times>
-	// The chapter number should be matched in a capturing group
-	regex := regexp.MustCompile("Ch.?(\\d{4}(\\.\\d+)*)")
-
-	matches := regex.FindAllStringSubmatchIndex(name, -1)
-	// Print all matches, just for debugging
-	for _, match := range matches {
-		fmt.Printf("%s\n", match)
-	}
-	// print all groups?
-	println("%s\n", regex.SubexpNames())
-	// get the captured group here, and return the chapter number
-	return result
-} */
+func sanitizeFilenameASCII(name string) string {
+	return sanitizeFilename(unidecode.Unidecode(name))
+}
 
 func main() {
 	// Parse flags
@@ -150,12 +143,12 @@ func main() {
 
 	// We should have only two args left - the input dir and the output name
 	if flag.NArg() != 2 {
-		fmt.Println("Usage: cbzconcat [flags] <input_dir> <output.cbz>")
+		fmt.Println("Usage: cbzconcat [flags] <input_dir> <output_dir>")
 		fmt.Println("Flags:")
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
-	inputDir, outputFile := flag.Arg(0), flag.Arg(1)
+	inputDir, outputDir := flag.Arg(0), flag.Arg(1)
 
 	// Find CBZ files
 	var cbzFiles []string
@@ -168,6 +161,11 @@ func main() {
 
 	if len(cbzFiles) == 0 {
 		fmt.Println("No CBZ files found")
+		os.Exit(1)
+	}
+
+	if len(cbzFiles) == 1 {
+		fmt.Println("Only one CBZ file found - no concatenation needed")
 		os.Exit(1)
 	}
 
@@ -223,8 +221,7 @@ func main() {
 	firstChapter := getChapter(firstComicInfo.Title)
 	lastChapter := getChapter(lastComicInfo.Title)
 	title := fmt.Sprintf("%s Ch.%s-%s", seriesName, firstChapter, lastChapter)
-	getChapter(firstChapter)
-	getChapter(lastChapter)
+	outputFile := filepath.Join(outputDir, fmt.Sprintf("%s.cbz", sanitizeFilenameASCII(title)))
 
 	// Create output CBZ
 	out, err := os.Create(outputFile)
