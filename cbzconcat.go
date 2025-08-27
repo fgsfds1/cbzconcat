@@ -69,10 +69,18 @@ func getChapter(name string) string {
 	// Regex: match "Ch" + optional separator + digits + optional (.digits)* pattern
 	// Example matches: Ch0015, Ch-0015.5, Ch_0015.5.5
 	regex := regexp.MustCompile(`(?i)ch(?:|ap|apter)[^0-9]{0,2}(\d+(?:\.\d+)*)`)
+	// This is a fallback regex, it tries to match any 3+ digit number. 3 and more digits so we don't match volumes
+	// Maybe try to match all numbers, but choose the latter? Should be the volume number, probably.
+	fallbackRegex := regexp.MustCompile(`(?i)(\d{3,}(?:\.\d+)*)`)
 
 	matches := regex.FindStringSubmatch(name)
 	if len(matches) > 1 {
 		return matches[1] // first capturing group is the number string
+	} else {
+		matches = fallbackRegex.FindStringSubmatch(name)
+		if len(matches) > 1 {
+			return matches[1]
+		}
 	}
 	return ""
 }

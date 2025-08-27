@@ -153,6 +153,7 @@ func TestGetChapter(t *testing.T) {
 func TestCompareChapters(t *testing.T) {
 	chapter1, chapter2 := "", ""
 
+	// These tests are for alphabetical sort, since we don't have "ch." before them
 	chapter1, chapter2 = "", ""
 	if !compareChaptersLess(chapter1, chapter2) {
 		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
@@ -185,6 +186,36 @@ func TestCompareChapters(t *testing.T) {
 	if !compareChaptersLess(chapter1, chapter2) {
 		t.Errorf("\"%s\" should be a previous chapter to \"%s\", and it isn't.", chapter1, chapter2)
 	}
+
+	// These tests are for mixed sort
+	chapter1, chapter2 = "My Code Can't Be That Bad! 123456", "My Code Can't Be That Bad! Ch. 123457"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "My Code Can't Be That Bad! 123456.5", "My Code Can't Be That Bad! Ch. 123457"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "My Code Can't Be That Bad! 123456.5.5", "My Code Can't Be That Bad! Ch. 123457"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "My Code Can't Be That Bad! Vol. 123456.5.5", "My Code Can't Be That Bad! Ch. 123457"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "My Code Can't Be That Bad! 0123", "My Code Can't Be That Bad! Ch. 123457"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+	chapter1, chapter2 = "My Code Can't Be That Bad! 00000123", "My Code Can't Be That Bad! Ch. 123457"
+	if !compareChaptersLess(chapter1, chapter2) {
+		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
+	}
+
+	// something something volumes should go here
+
+	// These tests are for natural sort
 	chapter1, chapter2 = "My Code Can't Be That Bad! Ch. 123456", "My Code Can't Be That Bad! Ch. 123457"
 	if !compareChaptersLess(chapter1, chapter2) {
 		t.Errorf("%s should be a previous chapter to %s, and it isn't.", chapter1, chapter2)
