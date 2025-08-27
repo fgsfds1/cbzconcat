@@ -86,7 +86,11 @@ jobs:
     needs: build
     steps:
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
+    
+      - name: just print the tree for debug purposes
+        run: find . -type f
+
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
