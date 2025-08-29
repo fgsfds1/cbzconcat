@@ -29,6 +29,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Fetch tags for version info
+        run: git fetch --tags
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
