@@ -119,15 +119,15 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
-          ref: master
+          ref: main
 
       - name: Configure git
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
 
-      - name: Merge develop to master
+      - name: Merge develop to main
         run: |
           git fetch origin develop
-          git merge origin/develop --no-ff -m "Auto-merge develop to master after release"
-          git push origin master
+          git merge origin/develop --no-ff -m "Auto-merge develop to main after release"
+          git push origin main
