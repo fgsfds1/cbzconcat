@@ -20,11 +20,8 @@ jobs:
         with:
           go-version: "1.20"
 
-      - name: Install dependencies
-        run: go mod tidy
-
       - name: Test and check coverage
-        run: go test -v -cover ./...
+        run: make test
 
   build:
     runs-on: ubuntu-latest
@@ -37,17 +34,14 @@ jobs:
         with:
           go-version: "1.20"
 
-      - name: Install dependencies
-        run: go mod tidy
-
-      - name: Create build directory
-        run: mkdir -p build
-
       - name: Build Linux amd64
-        run: go build -v -o build/cbzconcat.linux.amd64 ./...
+        run: |
+          make build
+          VERSION=$(make -s version | grep Version | cut -d' ' -f2)
+          mv build/cbzconcat-$VERSION build/cbzconcat-$VERSION.linux.amd64
 
       - name: Upload artifact Linux amd64
         uses: actions/upload-artifact@v4
         with:
-          name: cbzconcat.linux.amd64
-          path: ./build/cbzconcat.linux.amd64
+          name: cbzconcat-$VERSION.linux.amd64
+          path: ./build/cbzconcat-$VERSION.linux.amd64

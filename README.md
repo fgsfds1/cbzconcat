@@ -55,7 +55,24 @@ go mod tidy
 
 3. Build the binary:
 
+**Option A: Using Makefile (recommended):**
+```bash
+make build
 ```
+
+**Option B: Manual build with version info:**
+```bash
+# Get current version from git
+VERSION=$(git describe --tags --always --dirty 2>/dev/null || echo "unknown")
+BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+# Build with version injection
+go build -ldflags "-X main.Version=$VERSION -X main.BuildTime=$BUILD_TIME -X main.GitCommit=$GIT_COMMIT" -o cbzconcat
+```
+
+**Option C: Simple build (no version info):**
+```bash
 go build -o cbzconcat
 ```
 
@@ -77,6 +94,7 @@ cbzconcat [flags] <input_dir> <output_dir>
 - `-s` : Silent mode; suppress stdout output except for errors.
 - `-r` : Print the order of input CBZ files before merging.
 - `-x` : Print the resulting `ComicInfo.xml` content.
+- `--version` : Show version information and exit.
 
 ---
 
@@ -89,6 +107,19 @@ cbzconcat -v ./Elf-san\ wa\ Yaserarenai .
 ```
 
 This will produce a `./Elf-san_wa_Yaserarenai_Ch_0000-0047_6.cbz` file, with 0000-0047.6 being the chapters read from ComicInfo.xml from the first and the last chapters.
+
+### Binary Naming
+
+Built binaries include version information in their filenames:
+- **Local builds**: `./build/cbzconcat-v1.2.3.linux.amd64` (version info embedded in binary)
+- **Release builds**: `cbzconcat-v1.2.3.linux.amd64`, `cbzconcat-v1.2.3.win_amd64.exe`, etc.
+
+This makes it easy to identify which version of the tool you're using and helps with managing multiple versions.
+
+### Build Optimization
+
+- **Development builds** (`make build`): Include debug symbols for easier debugging
+- **Release builds** (`make release`): Optimized with stripped symbols (`-s -w`) for smaller, production-ready binaries
 
 ---
 
@@ -126,6 +157,60 @@ The tool uses sophisticated regex patterns to extract chapter numbers:
 - **Volume handling**: Currently only extracts chapter numbers, not volume information
 - **Mixed formats**: Files with both volume and chapter numbers may not sort optimally
 - **Error handling**: Uses panic() for critical errors (will exit the program)
+
+---
+
+## Versioning and Building
+
+This project uses git tags for versioning. The build process automatically injects version information into the binary.
+
+### Version Information
+
+The binary includes:
+- **Version**: From git tags (e.g., `v1.2.3`)
+- **Build Time**: When the binary was compiled
+- **Git Commit**: Short hash of the current commit
+
+### Build Commands
+
+```bash
+# Show current version info
+make version
+
+# Install/update dependencies
+make deps
+
+# Build linux x86 binary without optimisations
+make
+
+# Build all platforms
+make release
+
+# Run tests
+make test
+
+# Clean build artifacts
+make clean
+```
+
+**Note**: The Makefile is designed for both local development and CI/CD. It automatically detects whether it's running in GitHub Actions or locally and adjusts accordingly. The GitHub Actions workflows use the same Makefile targets to ensure consistency between local and automated builds.
+
+### CI/CD Integration
+
+The project includes GitHub Actions workflows that automatically:
+- **Test**: Run tests on every push/PR to main/develop branches
+- **Build**: Create versioned binaries for Linux and Windows platforms
+- **Release**: Automatically create releases when git tags are pushed
+
+All CI builds use the same Makefile targets (`make test`, `make build`, `make release`) ensuring consistency between local and automated builds.
+
+### Git Tagging
+
+To create a new version:
+```bash
+git tag v1.2.3
+git push origin v1.2.3
+```
 
 ---
 

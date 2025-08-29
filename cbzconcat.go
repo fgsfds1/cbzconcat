@@ -16,6 +16,13 @@ import (
 	"github.com/mozillazg/go-unidecode"
 )
 
+// Version information - these will be set at build time via ldflags
+var (
+	Version   = "unknown"
+	BuildTime = "unknown"
+	GitCommit = "unknown"
+)
+
 // ComicInfo structure for metadata
 type ComicInfo struct {
 	XMLName   xml.Name `xml:"ComicInfo"`
@@ -147,10 +154,20 @@ func main() {
 	printOrder := flag.Bool("r", false, "Print the order of the input cbz files")
 	runSilent := flag.Bool("s", false, "Whether to produce any stdout output at all; errors will still be output; overrides other output flags")
 	runVerbose := flag.Bool("v", false, "Verbose output, overrides -s (silent) flag")
+	showVersion := flag.Bool("version", false, "Show version information")
 	flag.Parse()
+
+	// Show version and exit if requested
+	if *showVersion {
+		fmt.Printf("cbzconcat v%s\n", Version)
+		fmt.Printf("Build time: %s\n", BuildTime)
+		fmt.Printf("Git commit: %s\n", GitCommit)
+		os.Exit(0)
+	}
 
 	// We should have only two args left - the input dir and the output name
 	if flag.NArg() != 2 {
+		fmt.Printf("cbzconcat v%s (%s)\n", Version, GitCommit)
 		fmt.Println("Usage: cbzconcat [flags] <input_dir> <output_dir>")
 		fmt.Println("Flags:")
 		flag.PrintDefaults()
