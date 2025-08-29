@@ -37,11 +37,10 @@ jobs:
       - name: Build Linux amd64
         run: |
           make build
-          VERSION=$(make -s version | grep Version | cut -d' ' -f2)
-          mv build/cbzconcat-$VERSION build/cbzconcat-$VERSION.linux.amd64
+          echo "VERSION=$(make -s version | grep Version | cut -d' ' -f2)" >> $GITHUB_ENV
 
       - name: Upload artifact Linux amd64
         uses: actions/upload-artifact@v4
         with:
-          name: cbzconcat-$VERSION.linux.amd64
-          path: ./build/cbzconcat-$VERSION.linux.amd64
+          name: cbzconcat-${{ env.VERSION }}.linux.amd64
+          path: ./build/cbzconcat-${{ env.VERSION }}.linux.amd64

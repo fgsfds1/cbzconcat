@@ -44,31 +44,31 @@ jobs:
       - name: Build all platforms
         run: |
           make release
-          VERSION=$(make -s version | grep Version | cut -d' ' -f2)
+          echo "VERSION=$(make -s version | grep Version | cut -d' ' -f2)" >> $GITHUB_ENV
 
       - name: Upload Linux amd64
         uses: actions/upload-artifact@v4
         with:
-          name: cbzconcat-$VERSION.linux.amd64
-          path: ./build/cbzconcat-$VERSION.linux.amd64
+          name: cbzconcat-${{ env.VERSION }}.linux.amd64
+          path: ./build/cbzconcat-${{ env.VERSION }}.linux.amd64
 
       - name: Upload Linux x86
         uses: actions/upload-artifact@v4
         with:
-          name: cbzconcat-$VERSION.linux.x86
-          path: ./build/cbzconcat-$VERSION.linux.x86
+          name: cbzconcat-${{ env.VERSION }}.linux.x86
+          path: ./build/cbzconcat-${{ env.VERSION }}.linux.x86
 
       - name: Upload Windows amd64
         uses: actions/upload-artifact@v4
         with:
-          name: cbzconcat-$VERSION.win_amd64.exe
-          path: ./build/cbzconcat-$VERSION.win_amd64.exe
+          name: cbzconcat-${{ env.VERSION }}.win_amd64.exe
+          path: ./build/cbzconcat-${{ env.VERSION }}.win_amd64.exe
 
       - name: Upload Windows x86
         uses: actions/upload-artifact@v4
         with:
-          name: cbzconcat-$VERSION.win_x86.exe
-          path: ./build/cbzconcat-$VERSION.win_x86.exe
+          name: cbzconcat-${{ env.VERSION }}.win_x86.exe
+          path: ./build/cbzconcat-${{ env.VERSION }}.win_x86.exe
 
   release:
     runs-on: ubuntu-latest
@@ -87,7 +87,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            cbzconcat-$VERSION.linux.amd64
-            cbzconcat-$VERSION.linux.x86
-            cbzconcat-$VERSION.win_amd64.exe
-            cbzconcat-$VERSION.win_x86.exe
+            cbzconcat-${{ env.VERSION }}.linux.amd64
+            cbzconcat-${{ env.VERSION }}.linux.x86
+            cbzconcat-${{ env.VERSION }}.win_amd64.exe
+            cbzconcat-${{ env.VERSION }}.win_x86.exe

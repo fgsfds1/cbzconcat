@@ -159,7 +159,7 @@ func main() {
 
 	// Show version and exit if requested
 	if *showVersion {
-		fmt.Printf("cbzconcat v%s\n", Version)
+		fmt.Printf("cbzconcat %s\n", Version)
 		fmt.Printf("Build time: %s\n", BuildTime)
 		fmt.Printf("Git commit: %s\n", GitCommit)
 		os.Exit(0)

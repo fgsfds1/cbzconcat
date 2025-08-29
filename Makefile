@@ -1,7 +1,6 @@
 # Makefile for cbzconcat
 # Build with version information from git tags
 
-# Much simpler and cleaner
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "unknown")
 BUILD_TIME := $(shell date -u +%Y-%m-%dT%H:%m:%SZ)
 GIT_COMMIT := $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
