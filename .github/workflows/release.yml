@@ -109,11 +109,25 @@ jobs:
             cbzconcat-${{ env.VERSION }}.win_amd64.exe
             cbzconcat-${{ env.VERSION }}.win_x86.exe
 
-      - name: Auto-merge to master
-        if: success()  # Only if previous steps succeeded
+  auto-merge:
+    runs-on: ubuntu-latest
+    needs: release
+    if: success()  # Only run if release job succeeded
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          ref: master
+
+      - name: Configure git
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git checkout master
-          git merge develop
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Merge develop to master
+        run: |
+          git fetch origin develop
+          git merge origin/develop --no-ff -m "Auto-merge develop to master after release"
           git push origin master
