@@ -16,6 +16,13 @@ import (
 	"github.com/mozillazg/go-unidecode"
 )
 
+// Version information - these will be set at build time via ldflags
+var (
+	Version   = "unknown"
+	BuildTime = "unknown"
+	GitCommit = "unknown"
+)
+
 // ComicInfo structure for metadata
 type ComicInfo struct {
 	XMLName   xml.Name `xml:"ComicInfo"`
@@ -68,24 +75,32 @@ func readXmlFromZip(filepath string) (ComicInfo, error) {
 func getChapter(name string) string {
 	// Regex: match "Ch" + optional separator + digits + optional (.digits)* pattern
 	// Example matches: Ch0015, Ch-0015.5, Ch_0015.5.5
-	regex := regexp.MustCompile(`(?i)Ch[^0-9]{0,2}(\d+(?:\.\d+)*)`)
+	regex := regexp.MustCompile(`(?i)ch(?:|ap|apter)[^0-9]{0,2}(\d+(?:\.\d+)*)`)
+	// This is a fallback regex, it tries to match any 3+ digit number. 3 and more digits so we don't match volumes
+	// Maybe try to match all numbers, but choose the latter? Should be the volume number, probably.
+	fallbackRegex := regexp.MustCompile(`(?i)(\d{3,}(?:\.\d+)*)`)
 
 	matches := regex.FindStringSubmatch(name)
 	if len(matches) > 1 {
 		return matches[1] // first capturing group is the number string
+	} else {
+		matches = fallbackRegex.FindStringSubmatch(name)
+		if len(matches) > 1 {
+			return matches[1]
+		}
 	}
 	return ""
 }
 
-// compareChapters does a "natural" comparison based on chapter numbers.
+// compareChaptersLess does a "natural" comparison based on chapter numbers.
 // It splits chapter strings into number slices, then compares piece by piece.
-func compareChapters(name1 string, name2 string) bool {
+func compareChaptersLess(name1 string, name2 string) bool {
 	ch1 := getChapter(name1)
 	ch2 := getChapter(name2)
 
 	if ch1 == "" && ch2 == "" {
 		// fallback: plain string comparison if no chapters found
-		return name1 < name2
+		return name1 <= name2
 	}
 	if ch1 == "" {
 		return false // put ones without chapter at the end
@@ -139,10 +154,20 @@ func main() {
 	printOrder := flag.Bool("r", false, "Print the order of the input cbz files")
 	runSilent := flag.Bool("s", false, "Whether to produce any stdout output at all; errors will still be output; overrides other output flags")
 	runVerbose := flag.Bool("v", false, "Verbose output, overrides -s (silent) flag")
+	showVersion := flag.Bool("version", false, "Show version information")
 	flag.Parse()
+
+	// Show version and exit if requested
+	if *showVersion {
+		fmt.Printf("cbzconcat %s\n", Version)
+		fmt.Printf("Build time: %s\n", BuildTime)
+		fmt.Printf("Git commit: %s\n", GitCommit)
+		os.Exit(0)
+	}
 
 	// We should have only two args left - the input dir and the output name
 	if flag.NArg() != 2 {
+		fmt.Printf("cbzconcat v%s (%s)\n", Version, GitCommit)
 		fmt.Println("Usage: cbzconcat [flags] <input_dir> <output_dir>")
 		fmt.Println("Flags:")
 		flag.PrintDefaults()
@@ -179,7 +204,7 @@ func main() {
 
 	// Sort files using the helper functions
 	sort.Slice(cbzFiles, func(i, j int) bool {
-		return compareChapters(cbzFiles[i], cbzFiles[j])
+		return compareChaptersLess(cbzFiles[i], cbzFiles[j])
 	})
 
 	// Print the order of the files

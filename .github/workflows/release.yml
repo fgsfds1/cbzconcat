@@ -8,78 +8,80 @@ on:
     tags: "*.*.*"
 
 permissions:
-    contents: write
+  contents: write
 
 jobs:
-
   test:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.20'
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.20"
 
-    - name: Install dependencies
-      run: go mod tidy
-  
-    - name: Test
-      run: go test -v ./...
+      - name: Install dependencies
+        run: go mod tidy
+
+      - name: Ensure that the tests pass before building
+        run: go test -v ./...
 
   build:
     runs-on: ubuntu-latest
     needs: test
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.20'
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.20"
 
-    - name: Install dependencies
-      run: go mod tidy
+      - name: Install dependencies
+        run: make deps
 
-    - name: Create build directory
-      run: mkdir -p build
+      - name: Build all platforms
+        run: |
+          make release
+          echo "VERSION=$(make -s version | grep Version | cut -d' ' -f2)" >> $GITHUB_ENV
 
-    - name: Build Linux amd64
-      run: go build -v -o build/cbzconcat.linux.amd64 ./...
-  
-    - name: Upload artifact Linux amd64
-      uses: actions/upload-artifact@v4
-      with:
-        name: cbzconcat.linux.amd64
-        path: ./build/cbzconcat.linux.amd64
+      - name: Upload Linux amd64
+        uses: actions/upload-artifact@v4
+        with:
+          name: cbzconcat-${{ env.VERSION }}.linux.amd64
+          path: ./build/cbzconcat-${{ env.VERSION }}.linux.amd64
 
-    - name: Build Linux x86
-      run: go build -v -o build/cbzconcat.linux.x86 ./...
+      - name: Upload Linux x86
+        uses: actions/upload-artifact@v4
+        with:
+          name: cbzconcat-${{ env.VERSION }}.linux.x86
+          path: ./build/cbzconcat-${{ env.VERSION }}.linux.x86
 
-    - name: Upload artifact Linux x86
-      uses: actions/upload-artifact@v4
-      with:
-        name: cbzconcat.linux.x86
-        path: ./build/cbzconcat.linux.x86
+      - name: Upload Windows amd64
+        uses: actions/upload-artifact@v4
+        with:
+          name: cbzconcat-${{ env.VERSION }}.win_amd64.exe
+          path: ./build/cbzconcat-${{ env.VERSION }}.win_amd64.exe
 
-    - name: Build Windows amd64
-      run: GOOS=windows GOARCH=amd64 go build -v -o build/cbzconcat_win_amd64.exe
+      - name: Upload Windows x86
+        uses: actions/upload-artifact@v4
+        with:
+          name: cbzconcat-${{ env.VERSION }}.win_x86.exe
+          path: ./build/cbzconcat-${{ env.VERSION }}.win_x86.exe
 
-    - name: Upload artifact Windows amd64
-      uses: actions/upload-artifact@v4
-      with:
-        name: cbzconcat_win_amd64.exe
-        path: ./build/cbzconcat_win_amd64.exe
-
-    - name: Build Windows x86
-      run: GOOS=windows GOARCH=386 go build -v -o build/cbzconcat_win_x86.exe
-
-    - name: Upload artifact Windows x86
-      uses: actions/upload-artifact@v4
-      with:
-        name: cbzconcat_win_x86.exe
-        path: ./build/cbzconcat_win_x86.exe
+      - name: Save version info
+        run: |
+          echo "$VERSION" > version.txt
+      
+      - name: Upload version info
+        uses: actions/upload-artifact@v4
+        with:
+          name: version-info
+          path: ./version.txt
 
   release:
     runs-on: ubuntu-latest
@@ -88,17 +90,44 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v5
         with:
-            path: ./
-            merge-multiple: true
-    
+          path: ./
+          merge-multiple: true
+
       - name: just print the tree for debug purposes
         run: find . -type f
+
+      - name: Get version info
+        run: |
+          echo "VERSION=$(cat version.txt)" >> $GITHUB_ENV
 
       - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-            files: |
-                cbzconcat.linux.amd64
-                cbzconcat.linux.x86
-                cbzconcat_win_amd64.exe
-                cbzconcat_win_x86.exe
+          files: |
+            cbzconcat-${{ env.VERSION }}.linux.amd64
+            cbzconcat-${{ env.VERSION }}.linux.x86
+            cbzconcat-${{ env.VERSION }}.win_amd64.exe
+            cbzconcat-${{ env.VERSION }}.win_x86.exe
+
+  auto-merge:
+    runs-on: ubuntu-latest
+    needs: release
+    if: success()  # Only run if release job succeeded
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          ref: main
+
+      - name: Configure git
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Merge develop to main
+        run: |
+          git fetch origin develop
+          git merge origin/develop --no-ff -m "Auto-merge develop to main after release"
+          git push origin main

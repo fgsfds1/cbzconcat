@@ -1,4 +1,9 @@
 # test manga
 *.cbz
-# binary
-cbzconcat
+
+# binaries and build artifacts
+cbzconcat*
+build/
+
+# coverage stuff
+cover.*
