@@ -108,3 +108,12 @@ jobs:
             cbzconcat-${{ env.VERSION }}.linux.x86
             cbzconcat-${{ env.VERSION }}.win_amd64.exe
             cbzconcat-${{ env.VERSION }}.win_x86.exe
+
+      - name: Auto-merge to master
+        if: success()  # Only if previous steps succeeded
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          git checkout master
+          git merge develop
+          git push origin master
