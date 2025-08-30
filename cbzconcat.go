@@ -155,6 +155,7 @@ func main() {
 	runSilent := flag.Bool("s", false, "Whether to produce any stdout output at all; errors will still be output; overrides other output flags")
 	runVerbose := flag.Bool("v", false, "Verbose output, overrides -s (silent) flag")
 	showVersion := flag.Bool("version", false, "Show version information")
+	guiMode := flag.Bool("gui", false, "Run in GUI mode")
 	flag.Parse()
 
 	// Show version and exit if requested
@@ -165,10 +166,17 @@ func main() {
 		os.Exit(0)
 	}
 
+	// Run GUI mode if requested
+	if *guiMode {
+		runGUI()
+		return
+	}
+
 	// We should have only two args left - the input dir and the output name
 	if flag.NArg() != 2 {
 		fmt.Printf("cbzconcat v%s (%s)\n", Version, GitCommit)
 		fmt.Println("Usage: cbzconcat [flags] <input_dir> <output_dir>")
+		fmt.Println("       cbzconcat -gui")
 		fmt.Println("Flags:")
 		flag.PrintDefaults()
 		os.Exit(1)
