@@ -12,16 +12,14 @@ Tested only on MangaDex archives (for now).
 
 ## TODO
 
-[ ] Modify the chapter info struct, include volumes
-[ ] Volume search in name
-[ ] Compare using the volumes
-[ ] Mixed comparison logic
-[ ] Figure out the command-action stuff
-[ ] Output version in help
-[ ] Builds that get passed the version
-[ ] Prune action
-[ ] Resize action
-[ ] Meta-edit action
+- [ ] Modify the chapter info struct, include volumes
+- [ ] Volume search in name
+- [ ] Compare using the volumes
+- [ ] Mixed comparison logic
+- [ ] Figure out the command-action stuff
+- [ ] Prune action
+- [ ] Resize action
+- [ ] Meta-edit action
 
 ---
 
@@ -211,6 +209,8 @@ To create a new version:
 git tag v1.2.3
 git push origin v1.2.3
 ```
+
+**Note**: After a successful release, the workflow automatically merges the `develop` branch into `main` to keep the main branch up-to-date with released code.
 
 ---
 
