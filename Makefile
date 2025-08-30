@@ -1,4 +1,4 @@
-# Makefile for cbzconcat
+# Makefile for cbztools
 # Build with version information from git tags
 
 VERSION := $(shell git describe --tags --always --dirty 2>/dev/null || echo "unknown")
@@ -20,10 +20,10 @@ deps:
 # Build the binary with version information (local development)
 .PHONY: build
 build:
-	@echo "Building cbzconcat v$(VERSION) (commit: $(GIT_COMMIT))"
+	@echo "Building cbztools v$(VERSION) (commit: $(GIT_COMMIT))"
 	make deps
 	mkdir -p build
-	go build -ldflags "$(VERSION_FLAGS)" -o build/cbzconcat-$(VERSION).linux.amd64
+	go build -ldflags "$(VERSION_FLAGS)" -o build/cbztools-$(VERSION).linux.amd64
 
 # Build all platforms like release workflow
 .PHONY: release
@@ -32,18 +32,18 @@ release:
 	make deps
 	mkdir -p build
 	# Linux amd64
-	go build -ldflags "$(VERSION_FLAGS) -s -w" -v -o build/cbzconcat-$(VERSION).linux.amd64
+	go build -ldflags "$(VERSION_FLAGS) -s -w" -v -o build/cbztools-$(VERSION).linux.amd64
 	# Linux x86
-	go build -ldflags "$(VERSION_FLAGS) -s -w" -v -o build/cbzconcat-$(VERSION).linux.x86
+	go build -ldflags "$(VERSION_FLAGS) -s -w" -v -o build/cbztools-$(VERSION).linux.x86
 	# Windows amd64
-	GOOS=windows GOARCH=amd64 go build -ldflags "$(VERSION_FLAGS) -s -w" -v -o build/cbzconcat-$(VERSION).win_amd64.exe
+	GOOS=windows GOARCH=amd64 go build -ldflags "$(VERSION_FLAGS) -s -w" -v -o build/cbztools-$(VERSION).win_amd64.exe
 	# Windows x86
-	GOOS=windows GOARCH=386 go build -ldflags "$(VERSION_FLAGS) -s -w" -v -o build/cbzconcat-$(VERSION).win_x86.exe
+	GOOS=windows GOARCH=386 go build -ldflags "$(VERSION_FLAGS) -s -w" -v -o build/cbztools-$(VERSION).win_x86.exe
 
 # Clean build artifacts
 .PHONY: clean
 clean:
-	rm -f cbzconcat
+	rm -f cbztools
 	rm -rf build/
 
 # Run tests
@@ -63,7 +63,7 @@ version:
 .PHONY: help
 help:
 	@echo "Available targets:"
-	@echo "  build         - Build cbzconcat with version info (local)"
+	@echo "  build         - Build cbztools with version info (local)"
 	@echo "  release       - Build all platforms like release workflow"
 	@echo "  install       - Install to system"
 	@echo "  clean         - Remove build artifacts"
