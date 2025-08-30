@@ -17,6 +17,7 @@ Tested only on MangaDex archives (for now).
 - [ ] Volume search in name
 - [ ] Compare using the volumes
 - [ ] Mixed comparison logic
+- [ ] Figure out stdout and stderr outputs in concat
 - [ ] Prune action
 - [ ] Resize action
 - [ ] Meta-edit action

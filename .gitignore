@@ -7,3 +7,7 @@ build/
 
 # coverage stuff
 cover.*
+
+# editor stuff
+.vscode/
+.cursor/
