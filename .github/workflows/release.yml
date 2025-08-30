@@ -52,26 +52,26 @@ jobs:
       - name: Upload Linux amd64
         uses: actions/upload-artifact@v4
         with:
-          name: cbzconcat-${{ env.VERSION }}.linux.amd64
-          path: ./build/cbzconcat-${{ env.VERSION }}.linux.amd64
+          name: cbztools-${{ env.VERSION }}.linux.amd64
+          path: ./build/cbztools-${{ env.VERSION }}.linux.amd64
 
       - name: Upload Linux x86
         uses: actions/upload-artifact@v4
         with:
-          name: cbzconcat-${{ env.VERSION }}.linux.x86
-          path: ./build/cbzconcat-${{ env.VERSION }}.linux.x86
+          name: cbztools-${{ env.VERSION }}.linux.x86
+          path: ./build/cbztools-${{ env.VERSION }}.linux.x86
 
       - name: Upload Windows amd64
         uses: actions/upload-artifact@v4
         with:
-          name: cbzconcat-${{ env.VERSION }}.win_amd64.exe
-          path: ./build/cbzconcat-${{ env.VERSION }}.win_amd64.exe
+          name: cbztools-${{ env.VERSION }}.win_amd64.exe
+          path: ./build/cbztools-${{ env.VERSION }}.win_amd64.exe
 
       - name: Upload Windows x86
         uses: actions/upload-artifact@v4
         with:
-          name: cbzconcat-${{ env.VERSION }}.win_x86.exe
-          path: ./build/cbzconcat-${{ env.VERSION }}.win_x86.exe
+          name: cbztools-${{ env.VERSION }}.win_x86.exe
+          path: ./build/cbztools-${{ env.VERSION }}.win_x86.exe
 
       - name: Save version info
         run: |
@@ -104,10 +104,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            cbzconcat-${{ env.VERSION }}.linux.amd64
-            cbzconcat-${{ env.VERSION }}.linux.x86
-            cbzconcat-${{ env.VERSION }}.win_amd64.exe
-            cbzconcat-${{ env.VERSION }}.win_x86.exe
+            cbztools-${{ env.VERSION }}.linux.amd64
+            cbztools-${{ env.VERSION }}.linux.x86
+            cbztools-${{ env.VERSION }}.win_amd64.exe
+            cbztools-${{ env.VERSION }}.win_x86.exe
 
   auto-merge:
     runs-on: ubuntu-latest
