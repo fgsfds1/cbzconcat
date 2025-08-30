@@ -1,6 +1,6 @@
-# cbzconcat
+# cbztools
 
-cbzconcat is a Go-based command-line tool to merge multiple `.cbz` files into a single archive.
+cbztools is a Go-based command-line utility for working with CBZ comic archives. It currently supports concatenating multiple `.cbz` files into a single archive, with more tools planned for the future.
 
 It preserves image order, uses natural sorting to determine chapter order, extracts metadata from ComicInfo.xml if available, and generates a sanitized output filename.
 
@@ -12,11 +12,11 @@ Tested only on MangaDex archives (for now).
 
 ## TODO
 
+- [x] Refactor to support subcommands (cbztools)
 - [ ] Modify the chapter info struct, include volumes
 - [ ] Volume search in name
 - [ ] Compare using the volumes
 - [ ] Mixed comparison logic
-- [ ] Figure out the command-action stuff
 - [ ] Prune action
 - [ ] Resize action
 - [ ] Meta-edit action
@@ -66,12 +66,12 @@ BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 GIT_COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
 # Build with version injection
-go build -ldflags "-X main.Version=$VERSION -X main.BuildTime=$BUILD_TIME -X main.GitCommit=$GIT_COMMIT" -o cbzconcat
+go build -ldflags "-X main.Version=$VERSION -X main.BuildTime=$BUILD_TIME -X main.GitCommit=$GIT_COMMIT" -o cbztools
 ```
 
 **Option C: Simple build (no version info):**
 ```bash
-go build -o cbzconcat
+go build -o cbztools
 ```
 
 
@@ -80,7 +80,18 @@ go build -o cbzconcat
 ## Usage
 
 ```
-cbzconcat [flags] <input_dir> <output_dir>
+cbztools <command> [flags] [args]
+```
+
+### Commands
+
+- `concat`: Concatenate multiple CBZ files into a single archive
+- `help`: Show help information
+
+### Concat Command
+
+```
+cbztools concat [flags] <input_dir> <output_dir>
 ```
 
 - `<input_dir>`: Directory containing CBZ files to merge.
@@ -101,7 +112,7 @@ cbzconcat [flags] <input_dir> <output_dir>
 Merge a folder of chapters into one CBZ in the current directory, with the name extracted from the first chapter and sanitized; with verbose output:
 
 ```
-cbzconcat -v ./Elf-san\ wa\ Yaserarenai .
+cbztools concat -v ./Elf-san\ wa\ Yaserarenai .
 ```
 
 This will produce a `./Elf-san_wa_Yaserarenai_Ch_0000-0047_6.cbz` file, with 0000-0047.6 being the chapters read from ComicInfo.xml from the first and the last chapters.
@@ -109,8 +120,8 @@ This will produce a `./Elf-san_wa_Yaserarenai_Ch_0000-0047_6.cbz` file, with 000
 ### Binary Naming
 
 Built binaries include version information in their filenames:
-- **Local builds**: `./build/cbzconcat-v1.2.3.linux.amd64` (version info embedded in binary)
-- **Release builds**: `cbzconcat-v1.2.3.linux.amd64`, `cbzconcat-v1.2.3.win_amd64.exe`, etc.
+- **Local builds**: `./build/cbztools-v1.2.3.linux.amd64` (version info embedded in binary)
+- **Release builds**: `cbztools-v1.2.3.linux.amd64`, `cbztools-v1.2.3.win_amd64.exe`, etc.
 
 This makes it easy to identify which version of the tool you're using and helps with managing multiple versions.
 

@@ -148,32 +148,26 @@ func sanitizeFilenameASCII(name string) string {
 	return sanitizeFilename(unidecode.Unidecode(name))
 }
 
-func main() {
-	// Parse flags
-	showXML := flag.Bool("x", false, "Print resulting XML (in the resulting cbz archive)")
-	printOrder := flag.Bool("r", false, "Print the order of the input cbz files")
-	runSilent := flag.Bool("s", false, "Whether to produce any stdout output at all; errors will still be output; overrides other output flags")
-	runVerbose := flag.Bool("v", false, "Verbose output, overrides -s (silent) flag")
-	showVersion := flag.Bool("version", false, "Show version information")
-	flag.Parse()
+// cmdConcat handles the concatenation functionality (previously the main function logic)
+func cmdConcat(args []string) {
+	// Parse flags for concat command
+	concatFlags := flag.NewFlagSet("concat", flag.ExitOnError)
+	showXML := concatFlags.Bool("x", false, "Print resulting XML (in the resulting cbz archive)")
+	printOrder := concatFlags.Bool("r", false, "Print the order of the input cbz files")
+	runSilent := concatFlags.Bool("s", false, "Whether to produce any stdout output at all; errors will still be output; overrides other output flags")
+	runVerbose := concatFlags.Bool("v", false, "Verbose output, overrides -s (silent) flag")
 
-	// Show version and exit if requested
-	if *showVersion {
-		fmt.Printf("cbzconcat %s\n", Version)
-		fmt.Printf("Build time: %s\n", BuildTime)
-		fmt.Printf("Git commit: %s\n", GitCommit)
-		os.Exit(0)
-	}
+	concatFlags.Parse(args)
 
 	// We should have only two args left - the input dir and the output name
-	if flag.NArg() != 2 {
-		fmt.Printf("cbzconcat v%s (%s)\n", Version, GitCommit)
-		fmt.Println("Usage: cbzconcat [flags] <input_dir> <output_dir>")
+	if concatFlags.NArg() != 2 {
+		fmt.Printf("cbztools concat v%s (%s)\n", Version, GitCommit)
+		fmt.Println("Usage: cbztools concat [flags] <input_dir> <output_dir>")
 		fmt.Println("Flags:")
-		flag.PrintDefaults()
+		concatFlags.PrintDefaults()
 		os.Exit(1)
 	}
-	inputDir, outputDir := flag.Arg(0), flag.Arg(1)
+	inputDir, outputDir := concatFlags.Arg(0), concatFlags.Arg(1)
 
 	// Find CBZ files
 	var cbzFiles []string
@@ -298,4 +292,70 @@ func main() {
 	w.Write(xmlBytes)
 
 	printIfNotSilent(fmt.Sprintf("Merged %d files into %s with %d pages\n", len(cbzFiles), outputFile, pageIndex-1), runSilent, runVerbose)
+}
+
+// cmdHelp displays help information
+func cmdHelp(args []string) {
+	fmt.Printf("cbztools v%s (%s)\n", Version, GitCommit)
+	fmt.Println("A utility for working with CBZ comic archives.")
+	fmt.Println()
+	fmt.Println("Usage: cbztools <command> [flags] [args]")
+	fmt.Println()
+	fmt.Println("Commands:")
+	fmt.Println("  concat    Concatenate multiple CBZ files into a single archive")
+	fmt.Println("  help      Show this help message")
+	fmt.Println()
+	fmt.Println("For help on a specific command:")
+	fmt.Println("  cbztools <command> -h")
+	fmt.Println()
+	fmt.Println("Examples:")
+	fmt.Println("  cbztools concat ./chapters ./output")
+	fmt.Println("  cbztools concat -v -r ./chapters ./output")
+}
+
+func main() {
+	// Check if we have any arguments
+	if len(os.Args) < 2 {
+		// No subcommand provided, show help
+		cmdHelp(nil)
+		os.Exit(1)
+	}
+
+	// Parse global flags (like version)
+	showVersion := false
+	args := os.Args[1:]
+
+	// Check for global flags before subcommand
+	for i, arg := range args {
+		if arg == "-version" || arg == "--version" {
+			showVersion = true
+			// Remove version flag from args
+			args = append(args[:i], args[i+1:]...)
+			break
+		}
+	}
+
+	// Show version and exit if requested
+	if showVersion {
+		fmt.Printf("cbztools %s\n", Version)
+		fmt.Printf("Build time: %s\n", BuildTime)
+		fmt.Printf("Git commit: %s\n", GitCommit)
+		os.Exit(0)
+	}
+
+	// Get subcommand
+	subcommand := args[0]
+	subcommandArgs := args[1:]
+
+	// Handle subcommands
+	switch subcommand {
+	case "concat":
+		cmdConcat(subcommandArgs)
+	case "help":
+		cmdHelp(subcommandArgs)
+	default:
+		fmt.Printf("Unknown command: %s\n", subcommand)
+		fmt.Println("Run 'cbztools help' for usage information.")
+		os.Exit(1)
+	}
 }
