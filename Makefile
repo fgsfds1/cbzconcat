@@ -23,7 +23,13 @@ build:
 	@echo "Building cbztools v$(VERSION) (commit: $(GIT_COMMIT))"
 	make deps
 	mkdir -p build
-	go build -ldflags "$(VERSION_FLAGS)" -o build/cbztools-$(VERSION).linux.amd64
+	go build -ldflags "$(VERSION_FLAGS)" -o build/cbztools
+
+# Run the binary
+.PHONY: run
+run:
+	make build
+	./build/cbztools
 
 # Build all platforms like release workflow
 .PHONY: release

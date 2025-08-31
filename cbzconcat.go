@@ -152,19 +152,21 @@ func sanitizeFilenameASCII(name string) string {
 func cmdConcat(args []string) {
 	// Parse flags for concat command
 	concatFlags := flag.NewFlagSet("concat", flag.ExitOnError)
-	showXML := concatFlags.Bool("x", false, "Print resulting XML (in the resulting cbz archive)")
-	printOrder := concatFlags.Bool("r", false, "Print the order of the input cbz files")
-	runSilent := concatFlags.Bool("s", false, "Whether to produce any stdout output at all; errors will still be output; overrides other output flags")
-	runVerbose := concatFlags.Bool("v", false, "Verbose output, overrides -s (silent) flag")
+	showXML := concatFlags.Bool("xml", false, "Print resulting XML (in the resulting cbz archive)")
+	printOrder := concatFlags.Bool("order", false, "Print the order of the input cbz files")
+	runSilent := concatFlags.Bool("silent", false, "Whether to produce any stdout output at all; errors will still be output; overrides other output flags")
+	runVerbose := concatFlags.Bool("verbose", false, "Verbose output, overrides -silent (silent) flag")
+	concatFlags.Usage = func() {
+		fmt.Println("Usage: cbztools concat [flags] <input_dir> <output_dir>")
+		fmt.Println("Flags:")
+		concatFlags.PrintDefaults()
+	}
 
 	concatFlags.Parse(args)
 
 	// We should have only two args left - the input dir and the output name
 	if concatFlags.NArg() != 2 {
-		fmt.Printf("cbztools concat v%s (%s)\n", Version, GitCommit)
-		fmt.Println("Usage: cbztools concat [flags] <input_dir> <output_dir>")
-		fmt.Println("Flags:")
-		concatFlags.PrintDefaults()
+		concatFlags.Usage()
 		os.Exit(1)
 	}
 	inputDir, outputDir := concatFlags.Arg(0), concatFlags.Arg(1)
@@ -179,12 +181,12 @@ func cmdConcat(args []string) {
 	})
 
 	if len(cbzFiles) == 0 {
-		fmt.Println("No CBZ files found")
+		fmt.Fprintln(os.Stderr, "No CBZ files found")
 		os.Exit(1)
 	}
 
 	if len(cbzFiles) == 1 {
-		fmt.Println("Only one CBZ file found - no concatenation needed")
+		fmt.Fprintln(os.Stderr, "Only one CBZ file found - no concatenation needed")
 		os.Exit(1)
 	}
 
@@ -218,10 +220,8 @@ func cmdConcat(args []string) {
 	if err != nil {
 		panic(err)
 	}
-	if *runVerbose {
-		fmt.Println("XML read from first chapter:")
-		fmt.Println(string(firstXMLBytes[:]))
-	}
+	printIfVerbose("XML read from first chapter:", runVerbose)
+	printIfVerbose(string(firstXMLBytes[:]), runVerbose)
 
 	lastComicInfo, err := readXmlFromZip(cbzFiles[len(cbzFiles)-1])
 	if err != nil {
@@ -231,10 +231,8 @@ func cmdConcat(args []string) {
 	if err != nil {
 		panic(err)
 	}
-	if *runVerbose {
-		fmt.Println("XML read from last chapter:")
-		fmt.Println(string(lastXMLBytes[:]))
-	}
+	printIfVerbose("XML read from last chapter:", runVerbose)
+	printIfVerbose(string(lastXMLBytes[:]), runVerbose)
 
 	seriesName := firstComicInfo.Series
 	firstChapter := getChapter(firstComicInfo.Title)
@@ -294,7 +292,36 @@ func cmdConcat(args []string) {
 	printIfNotSilent(fmt.Sprintf("Merged %d files into %s with %d pages\n", len(cbzFiles), outputFile, pageIndex-1), runSilent, runVerbose)
 }
 
+// Prune duplicates from a list of CBZ files, calculating the duplicates by comparing the chapter numbers.
+// Deciding from which file to keep the images is done by choosing the file with the most similar chapters in the folder.
+// Similarity = same release group
+// So, if we have something released by a group [GreatScans] and [PerfectTranslations], and most of the chapters are from [GreatScans], we should keep the [GreatScans] file.
+// Group names are usually kept in the filename and are usually in square brackets, though not always.
 func cmdPrune(args []string) {
+	// Parse flags for prune command
+	pruneFlags := flag.NewFlagSet("prune", flag.ExitOnError)
+	runSilent := pruneFlags.Bool("s", false, "Whether to produce any stdout output at all; errors will still be output; overrides other output flags")
+	runVerbose := pruneFlags.Bool("v", false, "Verbose output, overrides -s (silent) flag")
+	pruneFlags.Usage = func() {
+		fmt.Println("Usage: cbztools prune [flags] <input_dir>")
+		fmt.Println("Flags:")
+		pruneFlags.PrintDefaults()
+	}
+
+	// askBeforePrune := pruneFlags.Bool("y", false, "Ask before pruning each file")
+
+	pruneFlags.Parse(args)
+
+	// Parse the input directory
+	if pruneFlags.NArg() != 1 {
+		pruneFlags.Usage()
+		os.Exit(1)
+	}
+	inputDir := pruneFlags.Arg(0)
+
+	// For now, just print the input directory and exit
+	printIfNotSilent(fmt.Sprintf("Input directory: %s", inputDir), runSilent, runVerbose)
+
 	panic("Not implemented yet")
 }
 
