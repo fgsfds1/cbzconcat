@@ -1,5 +1,7 @@
 # cbztools
 
+In active development! Not stable at all, and features may change without any notice!
+
 cbztools is a Go-based command-line utility for working with CBZ comic archives. It currently supports concatenating multiple `.cbz` files into a single archive, with more tools planned for the future.
 
 It preserves image order, uses natural sorting to determine chapter order, extracts metadata from ComicInfo.xml if available, and generates a sanitized output filename.
