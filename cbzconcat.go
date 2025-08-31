@@ -73,6 +73,7 @@ func readXmlFromZip(filepath string) (ComicInfo, error) {
 // getChapter extracts the chapter string like "0015", "0015.5", "0015.5.5" from a filename.
 // Returns "" if nothing is found.
 func getChapter(name string) string {
+	result := ""
 	// Regex: match "Ch" + optional separator + digits + optional (.digits)* pattern
 	// Example matches: Ch0015, Ch-0015.5, Ch_0015.5.5
 	regex := regexp.MustCompile(`(?i)ch(?:|ap|apter)[^0-9]{0,2}(\d+(?:\.\d+)*)`)
@@ -82,14 +83,25 @@ func getChapter(name string) string {
 
 	matches := regex.FindStringSubmatch(name)
 	if len(matches) > 1 {
-		return matches[1] // first capturing group is the number string
+		result = matches[1] // first capturing group is the number string
 	} else {
 		matches = fallbackRegex.FindStringSubmatch(name)
 		if len(matches) > 1 {
-			return matches[1]
+			result = matches[1]
 		}
 	}
-	return ""
+	// Trim leading zeros but preserve zero chapters
+	// e.g. "0015" -> "15", but "0000" -> "0" and "0000.0" -> "0.0"
+	if result != "" {
+		parts := strings.Split(result, ".")
+		parts[0] = strings.TrimLeft(parts[0], "0")
+		if parts[0] == "" {
+			parts[0] = "0"
+		}
+		result = strings.Join(parts, ".")
+	}
+
+	return result
 }
 
 // compareChaptersLess does a "natural" comparison based on chapter numbers.
@@ -99,8 +111,8 @@ func compareChaptersLess(name1 string, name2 string) bool {
 	ch2 := getChapter(name2)
 
 	if ch1 == "" && ch2 == "" {
-		// fallback: plain string comparison if no chapters found
-		return name1 <= name2
+		// fallback: plain natural string comparison if no chapters found
+		return stringNatCmpLess(name1, name2)
 	}
 	if ch1 == "" {
 		return false // put ones without chapter at the end
@@ -148,6 +160,54 @@ func sanitizeFilenameASCII(name string) string {
 	return sanitizeFilename(unidecode.Unidecode(name))
 }
 
+// findCBZFiles recursively searches for CBZ files in the given directory
+func findCBZFiles(inputDir string) ([]string, error) {
+	var cbzFiles []string
+	err := filepath.Walk(inputDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && strings.HasSuffix(strings.ToLower(info.Name()), ".cbz") {
+			cbzFiles = append(cbzFiles, path)
+		}
+		return nil
+	})
+	return cbzFiles, err
+}
+
+// compareStringsNaturally performs natural string sorting by comparing strings
+// character by character, treating consecutive digits as numbers for proper numerical ordering.
+// This is useful for sorting filenames that contain numbers.
+func stringNatCmpLess(s1, s2 string) bool {
+	i, j := 0, 0
+
+	for i < len(s1) && j < len(s2) {
+		// If both characters are digits, compare as numbers
+		if isDigit(s1[i]) && isDigit(s2[j]) {
+			// Extract numbers from both strings
+			num1, len1 := extractNumber(s1[i:])
+			num2, len2 := extractNumber(s2[j:])
+
+			if num1 != num2 {
+				return num1 < num2
+			}
+
+			i += len1
+			j += len2
+		} else {
+			// Compare characters normally
+			if s1[i] != s2[j] {
+				return s1[i] < s2[j]
+			}
+			i++
+			j++
+		}
+	}
+
+	// If we reach here, one string is a prefix of the other
+	return len(s1) < len(s2)
+}
+
 // cmdConcat handles the concatenation functionality (previously the main function logic)
 func cmdConcat(args []string) {
 	// Parse flags for concat command
@@ -172,13 +232,11 @@ func cmdConcat(args []string) {
 	inputDir, outputDir := concatFlags.Arg(0), concatFlags.Arg(1)
 
 	// Find CBZ files
-	var cbzFiles []string
-	filepath.Walk(inputDir, func(path string, info os.FileInfo, err error) error {
-		if err == nil && !info.IsDir() && strings.HasSuffix(strings.ToLower(info.Name()), ".cbz") {
-			cbzFiles = append(cbzFiles, path)
-		}
-		return nil
-	})
+	cbzFiles, err := findCBZFiles(inputDir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error finding CBZ files: %v\n", err)
+		os.Exit(1)
+	}
 
 	if len(cbzFiles) == 0 {
 		fmt.Fprintln(os.Stderr, "No CBZ files found")
@@ -300,15 +358,14 @@ func cmdConcat(args []string) {
 func cmdPrune(args []string) {
 	// Parse flags for prune command
 	pruneFlags := flag.NewFlagSet("prune", flag.ExitOnError)
-	runSilent := pruneFlags.Bool("s", false, "Whether to produce any stdout output at all; errors will still be output; overrides other output flags")
-	runVerbose := pruneFlags.Bool("v", false, "Verbose output, overrides -s (silent) flag")
+	runSilent := pruneFlags.Bool("silent", false, "Whether to produce any stdout output at all; errors will still be output; overrides other output flags")
+	runVerbose := pruneFlags.Bool("verbose", false, "Verbose output, overrides -silent (silent) flag")
+	// askBeforePrune := pruneFlags.Bool("y", false, "Ask before pruning each file")
 	pruneFlags.Usage = func() {
 		fmt.Println("Usage: cbztools prune [flags] <input_dir>")
 		fmt.Println("Flags:")
 		pruneFlags.PrintDefaults()
 	}
-
-	// askBeforePrune := pruneFlags.Bool("y", false, "Ask before pruning each file")
 
 	pruneFlags.Parse(args)
 
@@ -319,8 +376,65 @@ func cmdPrune(args []string) {
 	}
 	inputDir := pruneFlags.Arg(0)
 
-	// For now, just print the input directory and exit
-	printIfNotSilent(fmt.Sprintf("Input directory: %s", inputDir), runSilent, runVerbose)
+	printIfVerbose(fmt.Sprintf("Input directory: %s", inputDir), runVerbose)
+
+	// Find CBZ files
+	cbzFiles, err := findCBZFiles(inputDir)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error finding CBZ files: %v\n", err)
+		os.Exit(1)
+	}
+	printIfNotSilent(fmt.Sprintf("Found %d CBZ files", len(cbzFiles)), runSilent, runVerbose)
+
+	// Sort the files by chapter number, just to make the output more readable
+	sort.Slice(cbzFiles, func(i, j int) bool {
+		return compareChaptersLess(cbzFiles[i], cbzFiles[j])
+	})
+	printIfVerbose("Sorted files:", runVerbose)
+	for _, file := range cbzFiles {
+		printIfVerbose(file, runVerbose)
+	}
+
+	// Iterating over the files, create a map of the chapter numbers to the files
+	// For every chapter, there's a list of files with the same chapter number
+	chapterFilesMap := make(map[string][]string)
+	for _, file := range cbzFiles {
+		chapter := getChapter(file)
+		chapterFilesMap[chapter] = append(chapterFilesMap[chapter], file)
+	}
+
+	// Sort chapters for consistent output
+	var chapters []string
+	for chapter := range chapterFilesMap {
+		chapters = append(chapters, chapter)
+	}
+	sort.Slice(chapters, func(i, j int) bool {
+		return stringNatCmpLess(chapters[i], chapters[j])
+	})
+
+	// Print the chapter files map
+	printIfVerbose("Files by chapter:", runVerbose)
+	for _, chapter := range chapters {
+		files := chapterFilesMap[chapter]
+		printIfVerbose(fmt.Sprintf("  Chapter %s:", chapter), runVerbose)
+		for _, file := range files {
+			printIfVerbose(fmt.Sprintf("    %s", file), runVerbose)
+		}
+	}
+
+	// Check if there are any chapters with more than one file
+	// If there are not, print a stderr message and exit
+	hasMultipleFiles := false
+	for _, chapter := range chapters {
+		if len(chapterFilesMap[chapter]) > 1 {
+			hasMultipleFiles = true
+			break
+		}
+	}
+	if !hasMultipleFiles {
+		fmt.Fprintln(os.Stderr, "No chapters with more than one file found, nothing to prune")
+		os.Exit(1)
+	}
 
 	panic("Not implemented yet")
 }
@@ -362,6 +476,25 @@ func cmdVersion(args []string) {
 	fmt.Printf("Build time: %s\n", BuildTime)
 	fmt.Printf("Git commit: %s\n", GitCommit)
 	os.Exit(0)
+}
+
+// isDigit checks if a byte represents a digit
+func isDigit(b byte) bool {
+	return b >= '0' && b <= '9'
+}
+
+// extractNumber extracts a number from the beginning of a string
+// Returns the number and the length of the number in the string
+func extractNumber(s string) (int, int) {
+	num := 0
+	length := 0
+
+	for length < len(s) && isDigit(s[length]) {
+		num = num*10 + int(s[length]-'0')
+		length++
+	}
+
+	return num, length
 }
 
 func main() {

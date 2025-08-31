@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"path/filepath"
+	"reflect"
+	"sort"
 	"strings"
 	"testing"
 )
@@ -126,55 +129,56 @@ func TestGetChapter(t *testing.T) {
 	}{
 		// Basic chapter extraction tests
 		{"", "", "Empty title should return empty chapter"},
-		{"Ch.0001", "0001", "Basic Ch. prefix with 4 digits"},
-		{"Ch.0001.5", "0001.5", "Ch. prefix with decimal"},
-		{"Ch 0001.5", "0001.5", "Ch prefix with space separator"},
-		{"Ch  0001.5", "0001.5", "Ch prefix with multiple spaces"},
-		{"Ch 0001.5.5.5", "0001.5.5.5", "Ch prefix with multiple decimal parts"},
-		{"ch 0001.5.5.5", "0001.5.5.5", "Lowercase ch prefix"},
-		{"ch. 0001.5.5.5", "0001.5.5.5", "Lowercase ch. prefix"},
-		{"chapter 0001.5.5.5", "0001.5.5.5", "Full 'chapter' prefix"},
-		{"chapter0001.5.5.5", "0001.5.5.5", "No separator after 'chapter'"},
-		{"chapter #0001.5.5.5", "0001.5.5.5", "Hash separator after 'chapter'"},
-		{"chapter №0001.5.5.5", "0001.5.5.5", "No. separator after 'chapter'"},
-		{"chapter№0001.5.5.5", "0001.5.5.5", "No separator after 'chapter' with No."},
-		{"chapter#0001.5.5.5", "0001.5.5.5", "No separator after 'chapter' with hash"},
-		{"ch #0001.5.5.5", "0001.5.5.5", "Hash separator after 'ch'"},
+		{"Ch.0000", "0", "Basic Ch. prefix with 4 digits - zero"},
+		{"Ch.0001", "1", "Basic Ch. prefix with 4 digits"},
+		{"Ch.0001.5", "1.5", "Ch. prefix with decimal"},
+		{"Ch 0001.5", "1.5", "Ch prefix with space separator"},
+		{"Ch  0001.5", "1.5", "Ch prefix with multiple spaces"},
+		{"Ch 0001.5.5.5", "1.5.5.5", "Ch prefix with multiple decimal parts"},
+		{"ch 0001.5.5.5", "1.5.5.5", "Lowercase ch prefix"},
+		{"ch. 0001.5.5.5", "1.5.5.5", "Lowercase ch. prefix"},
+		{"chapter 0001.5.5.5", "1.5.5.5", "Full 'chapter' prefix"},
+		{"chapter0001.5.5.5", "1.5.5.5", "No separator after 'chapter'"},
+		{"chapter #0001.5.5.5", "1.5.5.5", "Hash separator after 'chapter'"},
+		{"chapter №0001.5.5.5", "1.5.5.5", "No. separator after 'chapter'"},
+		{"chapter№0001.5.5.5", "1.5.5.5", "No separator after 'chapter' with No."},
+		{"chapter#0001.5.5.5", "1.5.5.5", "No separator after 'chapter' with hash"},
+		{"ch #0001.5.5.5", "1.5.5.5", "Hash separator after 'ch'"},
 
 		// Fallback regex tests (3+ digits without ch prefix)
-		{"My Manga 001", "001", "3-digit number without ch prefix"},
-		{"My Manga 001.5", "001.5", "3-digit decimal without ch prefix"},
-		{"My Manga 001.5.5", "001.5.5", "3-digit multi-decimal without ch prefix"},
-		{"My Manga 0001", "0001", "4-digit number without ch prefix"},
-		{"My Manga 0001.5", "0001.5", "4-digit decimal without ch prefix"},
-		{"My Manga 0001.5.5", "0001.5.5", "4-digit multi-decimal without ch prefix"},
+		{"My Manga 001", "1", "3-digit number without ch prefix"},
+		{"My Manga 001.5", "1.5", "3-digit decimal without ch prefix"},
+		{"My Manga 001.5.5", "1.5.5", "3-digit multi-decimal without ch prefix"},
+		{"My Manga 0001", "1", "4-digit number without ch prefix"},
+		{"My Manga 0001.5", "1.5", "4-digit decimal without ch prefix"},
+		{"My Manga 0001.5.5", "1.5.5", "4-digit multi-decimal without ch prefix"},
 
 		// Edge cases for chapter extraction
-		{"Ch001", "001", "Ch prefix with no separator"},
-		{"Ch-001", "001", "Ch prefix with dash separator"},
-		{"Ch_001", "001", "Ch prefix with underscore separator"},
-		{"Ch.001", "001", "Ch prefix with dot separator"},
-		{"Ch:001", "001", "Ch prefix with colon separator"},
-		{"Ch;001", "001", "Ch prefix with semicolon separator"},
-		{"Ch,001", "001", "Ch prefix with comma separator"},
-		{"Ch!001", "001", "Ch prefix with exclamation separator"},
-		{"Ch?001", "001", "Ch prefix with question separator"},
-		{"Ch 001", "001", "Ch prefix with space separator"},
-		{"Ch  001", "001", "Ch prefix with multiple spaces"},
-		{"Ch\t001", "001", "Ch prefix with tab separator"},
-		{"Ch\n001", "001", "Ch prefix with newline separator"},
+		{"Ch001", "1", "Ch prefix with no separator"},
+		{"Ch-001", "1", "Ch prefix with dash separator"},
+		{"Ch_001", "1", "Ch prefix with underscore separator"},
+		{"Ch.001", "1", "Ch prefix with dot separator"},
+		{"Ch:001", "1", "Ch prefix with colon separator"},
+		{"Ch;001", "1", "Ch prefix with semicolon separator"},
+		{"Ch,001", "1", "Ch prefix with comma separator"},
+		{"Ch!001", "1", "Ch prefix with exclamation separator"},
+		{"Ch?001", "1", "Ch prefix with question separator"},
+		{"Ch 001", "1", "Ch prefix with space separator"},
+		{"Ch  001", "1", "Ch prefix with multiple spaces"},
+		{"Ch\t001", "1", "Ch prefix with tab separator"},
+		{"Ch\n001", "1", "Ch prefix with newline separator"},
 
 		// Case variations
-		{"CH001", "001", "Uppercase CH"},
-		{"ch001", "001", "Lowercase ch"},
-		{"Ch001", "001", "Mixed case Ch"},
-		{"cH001", "001", "Mixed case cH"},
+		{"CH001", "1", "Uppercase CH"},
+		{"ch001", "1", "Lowercase ch"},
+		{"Ch001", "1", "Mixed case Ch"},
+		{"cH001", "1", "Mixed case cH"},
 
 		// Chapter variations
-		{"Chapter001", "001", "Full 'Chapter' prefix"},
-		{"CHAPTER001", "001", "Uppercase 'CHAPTER' prefix"},
-		{"chapter001", "001", "Lowercase 'chapter' prefix"},
-		{"Chap001", "001", "Abbreviated 'Chap' prefix"},
+		{"Chapter001", "1", "Full 'Chapter' prefix"},
+		{"CHAPTER001", "1", "Uppercase 'CHAPTER' prefix"},
+		{"chapter001", "1", "Lowercase 'chapter' prefix"},
+		{"Chap001", "1", "Abbreviated 'Chap' prefix"},
 
 		// Numbers that shouldn't match (less than 3 digits)
 		{"My Manga 12", "", "2-digit number should not match fallback"},
@@ -182,45 +186,46 @@ func TestGetChapter(t *testing.T) {
 		{"My Manga 0", "", "0 should not match fallback"},
 		// Numbers that should match (3+ digits)
 		{"123", "123", "3-digit number should match fallback"},
+		{"012", "12", "3-digit number should match fallback"},
 		{"12", "", "2-digit number should not match fallback"},
 		{"1", "", "1-digit number should not match fallback"},
 		{"0", "", "0 should not match fallback"},
 
 		// Text after numbers
-		{"Ch001 [END]", "001", "Chapter with text after"},
-		{"Ch001.5 [END]", "001.5", "Decimal chapter with text after"},
-		{"Ch001.5.5 [END]", "001.5.5", "Multi-decimal chapter with text after"},
+		{"Ch001 [END]", "1", "Chapter with text after"},
+		{"Ch001.5 [END]", "1.5", "Decimal chapter with text after"},
+		{"Ch001.5.5 [END]", "1.5.5", "Multi-decimal chapter with text after"},
 
 		// Text before numbers
-		{"[START] Ch001", "001", "Chapter with text before"},
-		{"[START] Ch001.5", "001.5", "Decimal chapter with text before"},
+		{"[START] Ch001", "1", "Chapter with text before"},
+		{"[START] Ch001.5", "1.5", "Decimal chapter with text before"},
 
 		// Multiple numbers (should pick the first chapter match)
-		{"Ch001 Vol002", "001", "Chapter should take precedence over volume"},
-		{"Vol002 Ch001", "001", "Chapter should take precedence over volume"},
+		{"Ch001 Vol002", "1", "Chapter should take precedence over volume"},
+		{"Vol002 Ch001", "1", "Chapter should take precedence over volume"},
 
 		// Edge cases for decimal numbers
-		{"Ch001.", "001", "Chapter ending with dot"},
-		{"Ch001.5.", "001.5", "Decimal chapter ending with dot"},
-		{"Ch001..5", "001", "Chapter with double dot (should stop at first dot)"},
-		{"Ch001.5..5", "001.5", "Decimal chapter with double dot"},
+		{"Ch001.", "1", "Chapter ending with dot"},
+		{"Ch001.5.", "1.5", "Decimal chapter ending with dot"},
+		{"Ch001..5", "1", "Chapter with double dot (should stop at first dot)"},
+		{"Ch001.5..5", "1.5", "Decimal chapter with double dot"},
 
 		// Very long chapter numbers
 		{"Ch123456789", "123456789", "Very long chapter number"},
 		{"Ch123456789.987654321", "123456789.987654321", "Very long decimal chapter"},
 
 		// Zero values
-		{"Ch000", "000", "Chapter with all zeros"},
-		{"Ch000.0", "000.0", "Decimal chapter with zeros"},
-		{"Ch000.0.0", "000.0.0", "Multi-decimal chapter with zeros"},
+		{"Ch000", "0", "Chapter with all zeros"},
+		{"Ch000.0", "0.0", "Decimal chapter with zeros"},
+		{"Ch000.0.0", "0.0.0", "Multi-decimal chapter with zeros"},
 
 		// Negative numbers (should still extract number)
-		{"Ch-001", "001", "Negative chapter should still extract number"},
-		{"Ch-001.5", "001.5", "Negative decimal chapter should still extract number"},
+		{"Ch-001", "1", "Negative chapter should still extract number"},
+		{"Ch-001.5", "1.5", "Negative decimal chapter should still extract number"},
 
 		// Special characters in chapter numbers
-		{"Ch001_5", "001", "Underscore in chapter should not be part of number"},
-		{"Ch001-5", "001", "Dash in chapter should not be part of number"},
+		{"Ch001_5", "1", "Underscore in chapter should not be part of number"},
+		{"Ch001-5", "1", "Dash in chapter should not be part of number"},
 
 		// No valid chapter
 		{"My Manga Title", "", "No chapter information"},
@@ -268,6 +273,7 @@ func TestCompareChapters(t *testing.T) {
 		{"My Code Can't Be That Bad! Vol. 016 010", "My Code Can't Be That Bad! Vol. 006 Ch. 015", false, "Vol. 016 010 has no chapter, should go to end (be greater)"},
 
 		// Natural sort (with ch. prefix)
+		{"My Code Can't Be That Bad! Ch. 0002", "My Code Can't Be That Bad! Ch. 0010", true, "Ch. 0002 should be less than Ch. 0010"},
 		{"My Code Can't Be That Bad! Ch. 123456", "My Code Can't Be That Bad! Ch. 123457", true, "Ch. 123456 should be less than Ch. 123457"},
 		{"My Code Can't Be That Bad! Ch. 123456.5", "My Code Can't Be That Bad! Ch. 123457", true, "Ch. 123456.5 should be less than Ch. 123457"},
 		{"My Code Can't Be That Bad! Ch. 123456.5 [superScans]", "My Code Can't Be That Bad! Ch. 123457 [superScans]", true, "Ch. 123456.5 [superScans] should be less than Ch. 123457 [superScans]"},
@@ -404,4 +410,152 @@ func longFilename(chapter string) string {
 	prefix := "My Very Long Manga Title That Has Many Words And Characters "
 	suffix := " With Additional Information And Metadata That Makes The Filename Very Long"
 	return prefix + chapter + suffix
+}
+
+func TestFindCBZFiles(t *testing.T) {
+	// Create a temporary directory for testing
+	tempDir, err := os.MkdirTemp("", "cbzconcat_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Create test subdirectories
+	subDir1 := filepath.Join(tempDir, "subdir1")
+	subDir2 := filepath.Join(tempDir, "subdir2")
+	os.MkdirAll(subDir1, 0755)
+	os.MkdirAll(subDir2, 0755)
+
+	// Create test files
+	testFiles := []struct {
+		path    string
+		content string
+		isDir   bool
+	}{
+		{filepath.Join(tempDir, "file1.cbz"), "content1", false},
+		{filepath.Join(tempDir, "file2.CBZ"), "content2", false},
+		{filepath.Join(tempDir, "file3.txt"), "content3", false},
+		{filepath.Join(tempDir, "file4.cbz"), "content4", false},
+		{filepath.Join(subDir1, "nested1.cbz"), "nested1", false},
+		{filepath.Join(subDir1, "nested2.txt"), "nested2", false},
+		{filepath.Join(subDir2, "deep.cbz"), "deep", false},
+		{filepath.Join(tempDir, "empty_dir"), "", true},
+	}
+
+	// Create the test files and directories
+	for _, tf := range testFiles {
+		if tf.isDir {
+			os.MkdirAll(tf.path, 0755)
+		} else {
+			err := os.WriteFile(tf.path, []byte(tf.content), 0644)
+			if err != nil {
+				t.Fatalf("Failed to create test file %s: %v", tf.path, err)
+			}
+		}
+	}
+
+	// Test cases
+	testCases := []struct {
+		name        string
+		inputDir    string
+		expected    []string
+		expectError bool
+	}{
+		{
+			name:     "find all cbz files in root and subdirectories",
+			inputDir: tempDir,
+			expected: []string{
+				filepath.Join(tempDir, "file1.cbz"),
+				filepath.Join(tempDir, "file2.CBZ"),
+				filepath.Join(tempDir, "file4.cbz"),
+				filepath.Join(subDir1, "nested1.cbz"),
+				filepath.Join(subDir2, "deep.cbz"),
+			},
+			expectError: false,
+		},
+		{
+			name:        "non-existent directory",
+			inputDir:    filepath.Join(tempDir, "nonexistent"),
+			expected:    nil,
+			expectError: true,
+		},
+		{
+			name:     "subdirectory with one cbz file",
+			inputDir: subDir1,
+			expected: []string{
+				filepath.Join(subDir1, "nested1.cbz"),
+			},
+			expectError: false,
+		},
+	}
+
+	// Run tests
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result, err := findCBZFiles(tc.inputDir)
+
+			// Check error expectations
+			if tc.expectError && err == nil {
+				t.Errorf("Expected error but got none")
+			}
+			if !tc.expectError && err != nil {
+				t.Errorf("Unexpected error: %v", err)
+			}
+
+			// Check results
+			if !tc.expectError {
+				// Sort both slices for comparison since filepath.Walk order is not guaranteed
+				sort.Strings(result)
+				sort.Strings(tc.expected)
+
+				if !reflect.DeepEqual(result, tc.expected) {
+					t.Errorf("Expected %v, got %v", tc.expected, result)
+				}
+			}
+		})
+	}
+}
+
+func TestFindCBZFilesCaseInsensitive(t *testing.T) {
+	// Create a temporary directory for testing
+	tempDir, err := os.MkdirTemp("", "cbzconcat_case_test")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tempDir)
+
+	// Create test files with different case extensions
+	testFiles := []string{
+		"file1.cbz",
+		"file2.CBZ",
+		"file3.Cbz",
+		"file4.cBz",
+		"file5.txt",
+	}
+
+	for _, filename := range testFiles {
+		path := filepath.Join(tempDir, filename)
+		err := os.WriteFile(path, []byte("content"), 0644)
+		if err != nil {
+			t.Fatalf("Failed to create test file %s: %v", path, err)
+		}
+	}
+
+	// Test that all case variations of .cbz are found
+	result, err := findCBZFiles(tempDir)
+	if err != nil {
+		t.Fatalf("Unexpected error: %v", err)
+	}
+
+	expectedCount := 4 // Should find all .cbz files regardless of case
+	if len(result) != expectedCount {
+		t.Errorf("Expected %d CBZ files, got %d", expectedCount, len(result))
+	}
+
+	// Verify that .txt file is not included
+	for _, file := range result {
+		if filepath.Ext(strings.ToLower(file)) != ".cbz" {
+			t.Errorf("Found non-CBZ file: %s", file)
+		}
+	}
 }
