@@ -11,7 +11,7 @@ import (
 	"testing"
 )
 
-// Helper functions to capture stdout, used in tests that test over stdout
+// Helper test functions to capture stdout, used in tests that test over stdout
 // (printIfVerbose, printIfNotSilent)
 func setupStdout(t *testing.T) (*os.File, *os.File, *os.File) {
 	originalStdout := os.Stdout
