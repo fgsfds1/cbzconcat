@@ -254,7 +254,7 @@ func TestCompareChapters(t *testing.T) {
 		description    string
 	}{
 		// Basic alphabetical sort (no ch. prefix)
-		{"", "", true, "Empty strings should be equal (both have no chapters, so use string comparison)"},
+		{"", "", false, "Empty strings should be equal (both have no chapters, so use string comparison)"},
 		{"1", "2", true, "1 should be less than 2"},
 		{"2", "2.5", true, "2 should be less than 2.5"},
 		{"2.4", "2.5", true, "2.4 should be less than 2.5"},
