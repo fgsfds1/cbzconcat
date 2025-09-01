@@ -131,3 +131,26 @@ jobs:
           git fetch origin develop
           git merge origin/develop --no-ff -m "Auto-merge develop to main after release"
           git push origin main
+
+  merge-main-to-develop:
+    runs-on: ubuntu-latest
+    needs: auto-merge
+    if: success()  # Only run if auto-merge job succeeded
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+          ref: develop
+
+      - name: Configure git
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Merge main to develop
+        run: |
+          git fetch origin main
+          git merge origin/main --no-ff -m "Auto-merge main to develop after release"
+          git push origin develop
