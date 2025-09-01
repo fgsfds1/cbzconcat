@@ -65,6 +65,8 @@ func main() {
 		cmdPrune(subcommandArgs)
 	case "resize":
 		cmdResize(subcommandArgs)
+	case "split":
+		cmdSplit(subcommandArgs)
 	case "metadata":
 		cmdMetadata(subcommandArgs)
 	case "help", "h", "-h", "--help":

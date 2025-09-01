@@ -22,7 +22,9 @@ Tested only on MangaDex archives (for now).
 - [ ] Figure out stdout and stderr outputs in concat
 - [ ] Prune action
 - [ ] Resize action
+- [ ] Split action
 - [ ] Meta-edit action
+- [ ] warn about size
 
 ---
 
