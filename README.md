@@ -2,7 +2,7 @@
 
 In active development! Not stable at all, and features may change without any notice!
 
-cbztools is a Go-based command-line utility for working with CBZ comic archives. It currently supports concatenating multiple `.cbz` files into a single archive, with more tools planned for the future.
+cbztools is a Go-based command-line utility for working with CBZ comic archives. It supports concatenating multiple `.cbz` files, resizing images, and splitting archives, with more tools planned for the future.
 
 It preserves image order, uses natural sorting to determine chapter order, extracts metadata from ComicInfo.xml if available, and generates a sanitized output filename.
 
@@ -14,28 +14,49 @@ Tested only on MangaDex archives (for now).
 
 ## TODO
 
+### Commandless
 - [x] Refactor to support subcommands (cbztools)
 - [ ] Modify the chapter info struct, include volumes
 - [ ] Volume search in name
 - [ ] Compare using the volumes
 - [ ] Mixed comparison logic
+
+### concat
 - [ ] Figure out stdout and stderr outputs in concat
-- [ ] Prune action
-- [ ] Resize action
-- [ ] Split action
-- [ ] Meta-edit action
 - [ ] warn about size
+- [ ] concat into n archives
+
+### prune
+- [ ] implement prune by release group
+
+### resize
+- [ ] check resize function + if deps can be optimised
+- [ ] warn about size
+
+### split
+- [ ] Split into n parts, not just 2
+- [ ] Split by number of images into multiple parts
+- [ ] Somehow determine chapter names?
+
+### metadata
+- [ ] Meta-edit action
+- [ ] what should it do?
 
 ---
 
 ## Features
 
-- Merge multiple CBZ archives into one.
-- Natural chapter sorting (`Ch0015`, `Ch0015.5`, `Ch0015.5.5`, etc.).
-- Preserves only image files (`.jpg`, `.jpeg`, `.png`, `.gif`) from source CBZs.
-- Generates a new `ComicInfo.xml` in the merged archive.
-- Sanitizes output filenames for cross-platform compatibility.
-- ASCII transliteration of filenames.
+**Implemented:**
+- ✅ Merge multiple CBZ archives into one
+- ✅ Resize images inside archives to make them smaller
+- ✅ Split archives into two parts
+- ✅ Smart chapter sorting with natural number comparison
+- ✅ ASCII and Unicode filename sanitization (for use with older filesystems)
+- ✅ ComicInfo.xml metadata extraction and preservation
+
+**Planned:**
+- 🚧 Prune duplicate chapter archives (if downloading multiple release groups)
+- 🚧 Edit metadata of CBZ files
 
 ---
 
@@ -90,8 +111,13 @@ cbztools <command> [flags] [args]
 
 ### Commands
 
-- `concat`: Concatenate multiple CBZ files into a single archive
-- `help`: Show help information
+- `concat`: Concatenate multiple CBZ files into a single archive ✅
+- `resize`: Resize all images in a CBZ file to a specified width ✅
+- `split`: Split a CBZ file into two parts ✅
+- `prune`: Intelligently prune duplicate CBZ files (🚧 not implemented yet)
+- `metadata`: Edit the metadata of a CBZ file (🚧 not implemented yet)
+- `version`: Show version information and exit ✅
+- `help`: Show help information ✅
 
 ### Concat Command
 
@@ -102,25 +128,75 @@ cbztools concat [flags] <input_dir> <output_dir>
 - `<input_dir>`: Directory containing CBZ files to merge.
 - `<output_dir>`: Directory where the merged CBZ will be created.
 
-### Flags
+**Flags:**
+- `--verbose` : Verbose output (overrides silent mode).
+- `--silent` : Silent mode; suppress stdout output except for errors.
+- `--order` : Print the order of input CBZ files before merging.
+- `--xml` : Print the resulting `ComicInfo.xml` content.
 
-- `-v` : Verbose output (overrides silent mode).
-- `-s` : Silent mode; suppress stdout output except for errors.
-- `-r` : Print the order of input CBZ files before merging.
-- `-x` : Print the resulting `ComicInfo.xml` content.
-- `--version` : Show version information and exit.
+### Resize Command
+
+```
+cbztools resize [flags] <input_file> <output_file>
+```
+
+- `<input_file>`: CBZ file to resize.
+- `<output_file>`: Path for the resized CBZ file.
+
+**Flags:**
+- `--verbose` : Verbose output (overrides silent mode).
+- `--silent` : Silent mode; suppress stdout output except for errors.
+- `--width` : Target width in pixels (default: 1024).
+
+### Split Command
+
+```
+cbztools split [flags] <input.cbz> <output_dir>
+```
+
+- `<input.cbz>`: CBZ file to split.
+- `<output_dir>`: Directory where the split CBZ files will be created.
+
+**Flags:**
+- `--verbose` : Verbose output (overrides silent mode).
+- `--silent` : Silent mode; suppress stdout output except for errors.
+
+### Version Command
+
+```
+cbztools version
+```
+
+Shows the version, build time, and git commit information.
 
 ---
 
-## Example
+## Examples
 
+### Concatenate chapters
 Merge a folder of chapters into one CBZ in the current directory, with the name extracted from the first chapter and sanitized; with verbose output:
 
 ```
-cbztools concat -v ./Elf-san\ wa\ Yaserarenai .
+cbztools concat --verbose ./Elf-san\ wa\ Yaserarenai .
 ```
 
 This will produce a `./Elf-san_wa_Yaserarenai_Ch_0000-0047_6.cbz` file, with 0000-0047.6 being the chapters read from ComicInfo.xml from the first and the last chapters.
+
+### Resize images
+Resize all images in a CBZ file to 800px width:
+
+```
+cbztools resize --width 800 input.cbz output_resized.cbz
+```
+
+### Split a CBZ file
+Split a large CBZ file into two smaller ones:
+
+```
+cbztools split large_volume.cbz ./output_dir/
+```
+
+This will create `large_volume_part1.cbz` and `large_volume_part2.cbz` in the output directory.
 
 ### Binary Naming
 
